@@ -5,8 +5,8 @@ import de.raindancer.modules.oneblock.model.EconomyMode;
 import de.raindancer.modules.oneblock.model.Island;
 import de.raindancer.modules.oneblock.model.IslandDimension;
 import de.raindancer.modules.oneblock.model.Reply;
+import de.raindancer.modules.oneblock.model.Phase;
 import de.raindancer.modules.oneblock.model.Spawn;
-import de.raindancer.modules.oneblock.model.Upgrade;
 import de.raindancer.modules.oneblock.store.IslandBook;
 import de.raindancer.modules.oneblock.store.IslandStorage;
 import de.raindancer.modules.oneblock.store.PlayerSpot;
@@ -61,10 +61,11 @@ class IslandServiceTest {
         }
     };
 
-    private static final Upgrade COAL = new Upgrade("coal", "Coal", Upgrade.Kind.BLOCK, Material.COAL_ORE, null,
-            Set.of(IslandDimension.OVERWORLD), List.of(new Upgrade.Level(5, 20), new Upgrade.Level(10, 50)));
-    private static final Content CONTENT = new Content(Map.of(), Map.of("coal", COAL),
-            Map.of(IslandDimension.NETHER, 300L, IslandDimension.END, 1000L), 10, 1, 3, 8);
+    private static final Content CONTENT = new Content(Map.of(IslandDimension.OVERWORLD, List.of(
+            new Phase("meadow", "Meadow", 0, Material.GRASS_BLOCK, List.of(new Phase.Weighted(Material.DIRT, 1)),
+                    List.of(), Set.of()),
+            new Phase("caves", "Caves", 100, Material.STONE, List.of(new Phase.Weighted(Material.STONE, 1)),
+                    List.of(), Set.of(IslandDimension.NETHER)))), 3, 8);
 
     private final IslandBook book = new IslandBook(NOWHERE);
     private final IslandService service = new IslandService(book, () -> CONTENT, () -> 42L);
@@ -76,8 +77,9 @@ class IslandServiceTest {
         return book.ofPlayer(ada).orElseThrow();
     }
 
-    private void give(long shards) {
-        book.change(adas().id(), it -> Optional.of(it.withShardsAdded(shards)));
+    private void broken(UUID player, long times) {
+        Island island = book.ofPlayer(player).orElseThrow();
+        book.change(island.id(), it -> Optional.of(it.withBlock(IslandDimension.OVERWORLD, block -> block.withBroken(times))));
     }
 
     @Test
@@ -151,31 +153,17 @@ class IslandServiceTest {
     }
 
     @Test
-    @DisplayName("unlocking takes the price off the island's shards and opens the dimension")
-    void unlock() {
+    @DisplayName("islands already past a phase that opens a dimension get it opened: islands from before phases")
+    void openDue() {
         service.create(ada, "Ada", EconomyMode.PURE);
-        assertThat(service.unlock(ada, IslandDimension.NETHER).key()).isEqualTo("oneblock.buy.too-poor");
-        give(350);
+        service.create(bo, "Bo", EconomyMode.PURE);
+        broken(ada, 4_000);
+        broken(bo, 99);
 
-        assertThat(service.unlock(ada, IslandDimension.NETHER).ok()).isTrue();
-        assertThat(adas().shards()).isEqualTo(50);
+        assertThat(service.openDue()).isEqualTo(1);
         assertThat(adas().unlocked(IslandDimension.NETHER)).isTrue();
-        assertThat(service.unlock(ada, IslandDimension.NETHER).key()).isEqualTo("oneblock.unlock.already");
-    }
-
-    @Test
-    @DisplayName("an upgrade's level goes up by one per purchase, paid by the island")
-    void buy() {
-        service.create(ada, "Ada", EconomyMode.PURE);
-        service.join(bo, adas().id());
-        give(70);
-
-        assertThat(service.buy(bo, IslandDimension.OVERWORLD, "coal").ok()).isTrue();
-        assertThat(service.buy(ada, IslandDimension.OVERWORLD, "coal").ok()).isTrue();
-        assertThat(adas().shards()).isZero();
-        assertThat(adas().block(IslandDimension.OVERWORLD).orElseThrow().level("coal")).isEqualTo(2);
-        assertThat(service.buy(ada, IslandDimension.OVERWORLD, "coal").key()).isEqualTo("oneblock.buy.maxed");
-        assertThat(service.buy(cy, IslandDimension.OVERWORLD, "coal").key()).isEqualTo("oneblock.refuse.no-island");
+        assertThat(book.ofPlayer(bo).orElseThrow().unlocked(IslandDimension.NETHER)).isFalse();
+        assertThat(service.openDue()).as("nothing twice").isZero();
     }
 
     @Test

@@ -56,7 +56,8 @@ public final class AdminIslandsMenu extends PaginatedMenu<Island> implements IOn
         lore.add("<dark_gray>" + island.idPart());
         lore.add(loaded ? "<green>Loaded <gray>· " + players + " player(s) on it" : "<gray>Unloaded");
         lore.add("<gray>Money: " + services.messages().raw(island.mode().badgeKey()));
-        lore.add("<gray>Team: <white>" + island.everyone().size() + " <gray>· Shards: <light_purple>" + island.shards());
+        lore.add("<gray>Team: <white>" + island.everyone().size() + " <gray>· Broken: <white>"
+                + String.format("%,d", island.totalBroken()));
         AdminIslandMenu.addHoldLine(lore, island, System.currentTimeMillis());
         lore.add(island.autoUnload() ? "<gray>Auto-unload: <green>on" : "<gray>Auto-unload: <red>off");
         lore.add("");

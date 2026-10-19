@@ -29,7 +29,7 @@ class MigrationRuleTest {
     @Test
     @DisplayName("the block stays exactly where BentoBox had it, the team comes along, the money is not chosen yet")
     void sameSpot() {
-        Island island = rule.island(Contents.content(), bento(100), "Lilly", new MigrationRule.Thresholds(7500, 11500),
+        Island island = rule.island(bento(100), "Lilly", new MigrationRule.Thresholds(7500, 11500),
                 UUID.randomUUID());
 
         assertThat(island.block(IslandDimension.OVERWORLD).orElseThrow().spot()).isEqualTo(new BlockSpot(-800, 80, 800));
@@ -43,22 +43,13 @@ class MigrationRuleTest {
     }
 
     @Test
-    @DisplayName("shards are what the breaks would have earned here")
-    void shards() {
-        Island island = rule.island(Contents.content(), bento(2557), "L", new MigrationRule.Thresholds(7500, 11500),
-                UUID.randomUUID());
-
-        assertThat(island.shards()).isEqualTo(255);
-    }
-
-    @Test
     @DisplayName("a dimension AOneBlock had already reached comes unlocked")
     void unlocksByProgress() {
         MigrationRule.Thresholds at = new MigrationRule.Thresholds(7500, 11500);
 
-        Island early = rule.island(Contents.content(), bento(7499), "L", at, UUID.randomUUID());
-        Island nether = rule.island(Contents.content(), bento(7500), "L", at, UUID.randomUUID());
-        Island end = rule.island(Contents.content(), bento(20000), "L", at, UUID.randomUUID());
+        Island early = rule.island(bento(7499), "L", at, UUID.randomUUID());
+        Island nether = rule.island(bento(7500), "L", at, UUID.randomUUID());
+        Island end = rule.island(bento(20000), "L", at, UUID.randomUUID());
 
         assertThat(early.unlockedDimensions()).containsExactly(IslandDimension.OVERWORLD);
         assertThat(nether.unlockedDimensions()).containsExactlyInAnyOrder(IslandDimension.OVERWORLD,

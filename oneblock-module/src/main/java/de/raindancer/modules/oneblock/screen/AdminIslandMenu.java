@@ -8,6 +8,7 @@ import de.raindancer.modules.oneblock.model.Hold;
 import de.raindancer.modules.oneblock.model.Island;
 import de.raindancer.modules.oneblock.model.IslandDimension;
 import de.raindancer.modules.oneblock.model.Reply;
+import de.raindancer.modules.oneblock.rules.PhaseRule;
 import de.raindancer.modules.oneblock.service.IslandServer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -34,6 +35,7 @@ public final class AdminIslandMenu extends Menu implements IOneBlockScreen {
     private final OneBlockServices services;
     private final IslandServer islands;
     private final UUID islandId;
+    private final PhaseRule phases = new PhaseRule();
 
     public AdminIslandMenu(OneBlockServices services, IslandServer islands, Player viewer, Menu parent, UUID islandId) {
         super(viewer, islands.brand(), parent);
@@ -79,7 +81,8 @@ public final class AdminIslandMenu extends Menu implements IOneBlockScreen {
                 "<dark_gray>" + island.id(),
                 loaded ? "<green>Loaded <gray>· " + islands.worlds().playersOn(island).size() + " on it" : "<gray>Unloaded",
                 "<gray>Money: " + services.messages().raw(island.mode().badgeKey()),
-                "<gray>Shards: <light_purple>" + island.shards() + " <gray>· Broken: <white>" + island.totalBroken()));
+                "<gray>Phase: <yellow>" + phaseName(island) + " <gray>· Broken: <white>"
+                        + String.format("%,d", island.totalBroken())));
         addHoldLine(lore, island, now);
         lore.add(island.autoUnload() ? "<gray>Auto-unload: <green>on" : "<gray>Auto-unload: <red>off");
         set(MenuLayout.HEADER_SUBJECT, Icons.of(loaded ? Material.GRASS_BLOCK : Material.DIRT,
@@ -108,10 +111,21 @@ public final class AdminIslandMenu extends Menu implements IOneBlockScreen {
             viewer.closeInventory();
             islands.travel().go(viewer, island, IslandDimension.OVERWORLD);
         });
-        band(MenuLayout.RULES, 6, Icons.of(Material.AMETHYST_SHARD, "<light_purple>Shards: " + island.shards(),
-                        "", "<yellow>Left click: <white>+10", "<yellow>Shift click: <white>+100",
-                        "<yellow>Right click: <white>-10"),
-                click -> act(islands.admin().shards(islandId, click.isRightClick() ? -10 : click.isShiftClick() ? 100 : 10)));
+        band(MenuLayout.RULES, 6, Icons.of(Material.EXPERIENCE_BOTTLE, "<yellow>Overworld: " + phaseName(island),
+                        "<gray>" + String.format("%,d", overworldBroken(island)) + " blocks broken.",
+                        "<gray>What its phases open opens", "<gray>on the team's next break.", "",
+                        "<yellow>Left click: <white>+100", "<yellow>Shift click: <white>+1,000",
+                        "<yellow>Right click: <white>-100"),
+                click -> act(islands.admin().blocks(islandId, IslandDimension.OVERWORLD,
+                        click.isRightClick() ? -100 : click.isShiftClick() ? 1_000 : 100)));
+    }
+
+    private static long overworldBroken(Island island) {
+        return island.block(IslandDimension.OVERWORLD).map(block -> block.broken()).orElse(0L);
+    }
+
+    private String phaseName(Island island) {
+        return phases.at(islands.currentContent(), IslandDimension.OVERWORLD, overworldBroken(island)).name();
     }
 
     private void hold(Hold.Kind kind, InventoryClickEvent click) {

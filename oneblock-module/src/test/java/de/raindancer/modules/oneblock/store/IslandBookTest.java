@@ -2,6 +2,7 @@ package de.raindancer.modules.oneblock.store;
 
 import de.raindancer.modules.oneblock.model.EconomyMode;
 import de.raindancer.modules.oneblock.model.Island;
+import de.raindancer.modules.oneblock.model.IslandDimension;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -146,11 +147,11 @@ class IslandBookTest {
         Island island = island(UUID.randomUUID());
         book.add(island);
         for (int i = 0; i < 5; i++) {
-            book.change(island.id(), it -> Optional.of(it.withShardsAdded(1)));
+            book.change(island.id(), it -> Optional.of(it.broken(IslandDimension.OVERWORLD)));
         }
 
         assertThat(book.flush()).isZero();
-        assertThat(storage.saved.get(island.id()).shards()).isEqualTo(5);
+        assertThat(storage.saved.get(island.id()).totalBroken()).isEqualTo(5);
         assertThat(book.hasUnwritten()).isFalse();
     }
 
@@ -192,7 +193,7 @@ class IslandBookTest {
     }
 
     @Test
-    @DisplayName("eight threads adding shards at once lose none of them")
+    @DisplayName("eight threads breaking the block at once lose none of them")
     void concurrentChangesLoseNothing() throws InterruptedException {
         Island island = island(UUID.randomUUID());
         book.add(island);
@@ -204,7 +205,7 @@ class IslandBookTest {
             pool.submit(() -> {
                 start.await();
                 for (int i = 0; i < each; i++) {
-                    book.change(island.id(), it -> Optional.of(it.withShardsAdded(1)));
+                    book.change(island.id(), it -> Optional.of(it.broken(IslandDimension.OVERWORLD)));
                     if (i % 97 == 0) {
                         book.flush();
                     }
@@ -217,7 +218,7 @@ class IslandBookTest {
         assertThat(pool.awaitTermination(30, TimeUnit.SECONDS)).isTrue();
         book.flush();
 
-        assertThat(book.get(island.id()).orElseThrow().shards()).isEqualTo((long) threads * each);
-        assertThat(storage.saved.get(island.id()).shards()).isEqualTo((long) threads * each);
+        assertThat(book.get(island.id()).orElseThrow().totalBroken()).isEqualTo((long) threads * each);
+        assertThat(storage.saved.get(island.id()).totalBroken()).isEqualTo((long) threads * each);
     }
 }

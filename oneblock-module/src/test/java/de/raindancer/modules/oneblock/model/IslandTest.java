@@ -60,17 +60,6 @@ class IslandTest {
     }
 
     @Test
-    @DisplayName("shards are never spent into debt")
-    void shardsNeverGoNegative() {
-        Island island = island(EconomyMode.PURE).withShardsAdded(30);
-
-        assertThat(island.spending(50)).isEmpty();
-        assertThat(island.spending(30)).map(Island::shards).contains(0L);
-        assertThat(island.spending(-5)).isEmpty();
-        assertThat(island.withShardsAdded(-100).shards()).isZero();
-    }
-
-    @Test
     @DisplayName("unlocking a dimension puts its block at the start spot, once")
     void unlockingIsOnce() {
         Island unlocked = island(EconomyMode.PURE).unlocking(IslandDimension.NETHER).orElseThrow();
@@ -107,6 +96,16 @@ class IslandTest {
         assertThat(island.block(IslandDimension.OVERWORLD)).map(IslandBlock::broken).contains(1L);
         assertThat(island.totalBroken()).isEqualTo(3);
         assertThat(island.broken(IslandDimension.END).unlocked(IslandDimension.END)).isFalse();
+    }
+
+    @Test
+    @DisplayName("staff can set a block's count, but never below zero")
+    void settingTheCount() {
+        Island island = island(EconomyMode.PURE).withBlock(IslandDimension.OVERWORLD, block -> block.withBroken(500));
+
+        assertThat(island.block(IslandDimension.OVERWORLD)).map(IslandBlock::broken).contains(500L);
+        assertThat(island.withBlock(IslandDimension.OVERWORLD, block -> block.withBroken(-3))
+                .block(IslandDimension.OVERWORLD)).map(IslandBlock::broken).contains(0L);
     }
 
     @Test

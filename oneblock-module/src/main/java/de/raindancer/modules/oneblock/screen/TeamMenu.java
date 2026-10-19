@@ -73,7 +73,7 @@ public final class TeamMenu extends PaginatedMenu<UUID> implements IOneBlockScre
         }
         String name = nameOf(member);
         new ConfirmScreen(islands.brand(), viewer, this, "Take " + name + " off the island?",
-                List.of("<gray>They lose access to the island and its shards.", "<gray>Invite them again to undo it."),
+                List.of("<gray>They lose access to the island and its block.", "<gray>Invite them again to undo it."),
                 () -> {
                     IOneBlockScreen.tell(services.messages(), viewer,
                             islands.islands().kick(viewer.getUniqueId(), member, name));

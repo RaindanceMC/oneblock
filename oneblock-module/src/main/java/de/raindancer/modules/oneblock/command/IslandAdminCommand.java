@@ -29,12 +29,12 @@ import java.util.function.Supplier;
 
 /**
  * {@code /islandadmin} on the island server: the island list, keeping an island up or down for a while or for good,
- * releasing it, its auto-unload, going there, shards, reloading the content and moving islands over from BentoBox.
+ * releasing it, its auto-unload, going there, its block count, reloading the content and moving islands over from BentoBox.
  */
 public final class IslandAdminCommand implements IOneBlockCommand {
 
     private static final List<String> SUBCOMMANDS = List.of("list", "info", "up", "down", "release", "autounload",
-            "tp", "shards", "reload", "migrate");
+            "tp", "blocks", "reload", "migrate");
 
     private final Supplier<OneBlockServices> services;
 
@@ -67,6 +67,7 @@ public final class IslandAdminCommand implements IOneBlockCommand {
             // content.yml is a document in the database: read off the server thread, answered back on it.
             case "reload" -> Scheduling.async(live.plugin(), () -> {
                 List<String> problems = islands.get().content().reload();
+                islands.get().islands().openDue();
                 Scheduling.global(live.plugin(), () -> {
                     live.messages().send(sender, problems.isEmpty() ? "oneblock.admin.reloaded"
                             : "oneblock.admin.reloaded-with-problems", "problems", String.valueOf(problems.size()));
@@ -120,9 +121,15 @@ public final class IslandAdminCommand implements IOneBlockCommand {
                 }
                 yield islands.admin().autoUnload(id, args[2].equalsIgnoreCase("on"));
             }
-            case "shards" -> {
+            case "blocks" -> {
+                Optional<IslandDimension> dimension = args.length > 3 ? IslandDimension.byId(args[3])
+                        : Optional.of(IslandDimension.OVERWORLD);
+                if (dimension.isEmpty()) {
+                    yield Reply.refused("oneblock.admin.usage");
+                }
                 try {
-                    yield islands.admin().shards(id, Long.parseLong(args.length > 2 ? args[2].replace("+", "") : "x"));
+                    yield islands.admin().blocks(id, dimension.get(),
+                            Long.parseLong(args.length > 2 ? args[2].replace("+", "").replace(",", "").replace("_", "") : "x"));
                 } catch (NumberFormatException notANumber) {
                     yield Reply.refused("oneblock.admin.usage");
                 }
@@ -185,16 +192,20 @@ public final class IslandAdminCommand implements IOneBlockCommand {
                 case "up", "down" -> List.of("1h", "6h", "1d", "7d", "forever");
                 case "autounload" -> List.of("on", "off");
                 case "tp" -> List.of("overworld", "nether", "end");
-                case "shards" -> List.of("+100", "-100");
+                case "blocks" -> List.of("+100", "+1000", "-100");
                 default -> List.of();
             };
             return options.stream().filter(option -> option.startsWith(typed)).toList();
+        }
+        if (args.length == 4 && sub.equals("blocks")) {
+            String typed = args[3].toLowerCase(Locale.ROOT);
+            return List.of("overworld", "nether", "end").stream().filter(option -> option.startsWith(typed)).toList();
         }
         return List.of();
     }
 
     @Override
     public String describe() {
-        return "staff's control over islands: up, down, auto-unload, shards, migration";
+        return "staff's control over islands: up, down, auto-unload, block counts, migration";
     }
 }

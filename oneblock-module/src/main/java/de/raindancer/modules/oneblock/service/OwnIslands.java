@@ -9,6 +9,7 @@ import de.raindancer.modules.oneblock.model.IslandFacts;
 import de.raindancer.modules.oneblock.model.IslandView;
 import de.raindancer.modules.oneblock.model.Ranks;
 import de.raindancer.modules.oneblock.model.Reply;
+import de.raindancer.modules.oneblock.rules.PhaseRule;
 import de.raindancer.modules.oneblock.store.IslandBook;
 import de.raindancer.modules.oneblock.store.IslandStorage;
 import de.raindancer.modules.oneblock.store.PendingCommands;
@@ -42,6 +43,7 @@ public final class OwnIslands implements IslandHost {
     /** What to show an owner whose island has not chosen its money yet. */
     private final Consumer<Player> undecided;
     private final IslandStorage storage;
+    private final PhaseRule phases = new PhaseRule();
     private final PendingCommands pending;
     private final Executor async;
     private final BiConsumer<Player, Runnable> onPlayer;
@@ -137,12 +139,13 @@ public final class OwnIslands implements IslandHost {
         }
         Island shown = island.get();
         Optional<IslandDimension> dimension = here.isPresent() ? Island.dimensionOf(world) : Optional.empty();
-        long broken = shown.block(dimension.orElse(IslandDimension.OVERWORLD)).map(block -> block.broken()).orElse(0L);
+        IslandDimension counted = dimension.orElse(IslandDimension.OVERWORLD);
+        long broken = shown.block(counted).map(block -> block.broken()).orElse(0L);
         int online = (int) shown.everyone().stream()
                 .filter(member -> server.getPlayer(member) != null && !hidden.test(member)).count();
         return Optional.of(new IslandView(here.isPresent(), shown.isMember(playerId), shown.ownerName(),
                 Ranks.of(shown, playerId), shown.everyone().size(), content.get().teamSize(), online, shown.mode(),
-                shown.shards(), dimension, broken));
+                dimension, phases.standing(content.get(), counted, broken).progress()));
     }
 
     @Override

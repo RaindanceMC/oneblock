@@ -11,6 +11,7 @@ import de.raindancer.modules.oneblock.model.BentoIsland;
 import de.raindancer.modules.oneblock.model.Island;
 import de.raindancer.modules.oneblock.model.IslandDimension;
 import de.raindancer.modules.oneblock.rules.MigrationRule;
+import de.raindancer.modules.oneblock.rules.PhaseRule;
 import de.raindancer.modules.oneblock.store.BentoReader;
 import de.raindancer.modules.oneblock.store.IslandBook;
 import de.raindancer.modules.oneblock.store.PlayerSpot;
@@ -35,7 +36,7 @@ import java.util.stream.Stream;
 /**
  * Moves BentoBox's islands into this module's, once: {@code /islandadmin migrate} says what it would do,
  * {@code /islandadmin migrate confirm} does it. Each island's region files are copied as they are into its own world,
- * so the block, the builds and the chests keep their coordinates; its breaks pay their shards and a dimension AOneBlock
+ * so the block, the builds and the chests keep their coordinates; its count carries on into the phases and a dimension AOneBlock
  * had reached comes unlocked. Where a player logged out on an island is kept, so they come back to that spot.
  *
  * <p>Nothing of BentoBox's is changed or deleted — its files stay as the way back. An island already moved is skipped,
@@ -53,6 +54,7 @@ public final class MigrationService implements IOneBlockService {
     private final IslandServer islands;
     private final YamlStore done;
     private final MigrationRule rule = new MigrationRule();
+    private final PhaseRule phaseRule = new PhaseRule();
     private final AtomicBoolean running = new AtomicBoolean();
 
     public MigrationService(Plugin plugin, Server server, LogChannel log, Messages messages, IslandServer islands,
@@ -126,17 +128,18 @@ public final class MigrationService implements IOneBlockService {
                 skipped.add(bento.bentoId() + ": " + nameOf(taken.get()) + " is on an island here already");
                 continue;
             }
-            Island island = rule.island(islands.currentContent(), bento, nameOf(bento.owner()), at, UUID.randomUUID());
+            Island island = rule.island(bento, nameOf(bento.owner()), at, UUID.randomUUID());
             planned.add(new Planned(bento, island));
         }
         for (Planned one : planned) {
             Island island = one.island();
-            log.info("Migration plan: {}'s island, team {}, {} blocks -> {} shards, {}, block at {} {} {}.",
-                    island.ownerName(), island.everyone().size(), one.bento().lifetime(), island.shards(),
+            String phase = phaseRule.at(islands.currentContent(), IslandDimension.OVERWORLD, one.bento().lifetime()).name();
+            log.info("Migration plan: {}'s island, team {}, {} blocks -> phase {}, {}, block at {} {} {}.",
+                    island.ownerName(), island.everyone().size(), one.bento().lifetime(), phase,
                     island.unlockedDimensions(), one.bento().x(), one.bento().y(), one.bento().z());
             messages.send(sender, "oneblock.migrate.island", "player", island.ownerName(),
                     "team", String.valueOf(island.everyone().size()), "blocks", String.format("%,d", one.bento().lifetime()),
-                    "shards", String.format("%,d", island.shards()),
+                    "phase", phase,
                     "dimensions", String.join(", ", island.unlockedDimensions().stream().map(IslandDimension::id).toList()),
                     "spot", one.bento().x() + " " + one.bento().y() + " " + one.bento().z(),
                     "regions", String.valueOf(rule.regions(one.bento()).size()));
@@ -194,8 +197,8 @@ public final class MigrationService implements IOneBlockService {
             if (result.done()) {
                 added++;
                 moved.put(one.bento().bentoId(), one.island().id().toString());
-                log.info("Moved {}'s island over from BentoBox ({} blocks, {} shards).", one.island().ownerName(),
-                        one.bento().lifetime(), one.island().shards());
+                log.info("Moved {}'s island over from BentoBox ({} blocks).", one.island().ownerName(),
+                        one.bento().lifetime());
             } else {
                 messages.send(sender, "oneblock.migrate.copy-failed", "player", one.island().ownerName(),
                         "why", result.outcome().name());

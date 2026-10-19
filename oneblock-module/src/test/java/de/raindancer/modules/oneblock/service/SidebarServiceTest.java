@@ -6,6 +6,7 @@ import de.raindancer.modules.oneblock.OneBlockModule;
 import de.raindancer.modules.oneblock.model.EconomyMode;
 import de.raindancer.modules.oneblock.model.IslandDimension;
 import de.raindancer.modules.oneblock.model.IslandView;
+import de.raindancer.modules.oneblock.model.Progress;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,25 +39,27 @@ class SidebarServiceTest {
     }
 
     private static IslandView mine(boolean standingOn) {
-        return new IslandView(standingOn, true, "Raindancer118", 1000, 2, 6, 1, EconomyMode.SMP, 1234,
-                standingOn ? Optional.of(IslandDimension.NETHER) : Optional.empty(), 5678);
+        return new IslandView(standingOn, true, "Raindancer118", 1000, 2, 6, 1, EconomyMode.SMP,
+                standingOn ? Optional.of(IslandDimension.NETHER) : Optional.empty(),
+                new Progress("Crimson Forest", 2, 5, 5678, 40, "Warped Forest", 1234));
     }
 
     @Test
-    @DisplayName("on your own island: whose it is, your rank, its money, the shards, where you are, the block, the team")
+    @DisplayName("on your own island: whose it is, your rank, its money, where you are, the phase, the block, the team")
     void own() {
         List<String> lines = plain(sidebar.draw(Optional.of(mine(true)), room -> List.of()));
 
-        assertThat(lines).contains("Your island", "You: Owner", "◆ SMP economy", "Shards 1,234", "In the nether",
-                "5,678 blocks broken", "Team 2/6 · 1 online");
+        assertThat(lines).contains("Your island", "You: Owner", "◆ SMP economy", "In the nether",
+                "Crimson Forest 2/5", "Next: Warped Forest in 1,234", "5,678 blocks broken", "Team 2/6 · 1 online");
+        assertThat(lines).anyMatch(line -> line.endsWith("40%"));
         assertThat(lines.size()).isLessThanOrEqualTo(Sidebar.MAX_LINES);
     }
 
     @Test
     @DisplayName("on somebody else's island: theirs, you as a visitor, and which money it plays with")
     void visiting() {
-        IslandView view = new IslandView(true, false, "Ada", 0, 1, 6, 1, EconomyMode.PURE, 9,
-                Optional.of(IslandDimension.OVERWORLD), 3);
+        IslandView view = new IslandView(true, false, "Ada", 0, 1, 6, 1, EconomyMode.PURE,
+                Optional.of(IslandDimension.OVERWORLD), new Progress("Meadow", 1, 11, 3, 0, "Quarry", 497));
         assertThat(plain(sidebar.draw(Optional.of(view), room -> List.of())))
                 .contains("Ada's island", "You: Visitor", "✦ Pure");
     }
@@ -72,7 +75,16 @@ class SidebarServiceTest {
     @DisplayName("no island at all: how to get one, and nothing pretending to be numbers")
     void none() {
         List<String> lines = plain(sidebar.draw(Optional.empty(), room -> List.of()));
-        assertThat(lines).contains("No island yet", "/island to start one").noneMatch(line -> line.contains("Shards"));
+        assertThat(lines).contains("No island yet", "/island to start one").noneMatch(line -> line.contains("Phase") || line.contains("blocks broken"));
+    }
+
+    @Test
+    @DisplayName("in the last phase: says so instead of a next one")
+    void lastPhase() {
+        IslandView view = new IslandView(true, true, "Ada", 1000, 1, 6, 1, EconomyMode.PURE,
+                Optional.of(IslandDimension.OVERWORLD), new Progress("Plenty", 11, 11, 20_000, 100, "", 0));
+        assertThat(plain(sidebar.draw(Optional.of(view), room -> List.of())))
+                .contains("Plenty 11/11", "The last phase. It only gets better.").noneMatch(line -> line.startsWith("Next"));
     }
 
     @Test

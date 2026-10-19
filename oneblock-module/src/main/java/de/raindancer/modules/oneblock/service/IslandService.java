@@ -7,8 +7,7 @@ import de.raindancer.modules.oneblock.model.Island;
 import de.raindancer.modules.oneblock.model.IslandDimension;
 import de.raindancer.modules.oneblock.model.Reply;
 import de.raindancer.modules.oneblock.model.Spawn;
-import de.raindancer.modules.oneblock.model.Upgrade;
-import de.raindancer.modules.oneblock.rules.PurchaseRule;
+import de.raindancer.modules.oneblock.rules.PhaseRule;
 import de.raindancer.modules.oneblock.store.IslandBook;
 
 import java.util.Optional;
@@ -17,8 +16,8 @@ import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 /**
- * What players do with islands: making one, choosing its money, the team, unlocking and upgrading. Decides nothing
- * itself — the book keeps one island per player and the island keeps its own invariants; the purchase rule prices.
+ * What players do with islands: making one, choosing its money, the team, the spawn. Decides nothing itself — the
+ * book keeps one island per player and the island keeps its own invariants.
  * Every answer is a {@link Reply}, said by whoever asked. No Bukkit here, so all of it is tested.
  */
 public final class IslandService implements IOneBlockService {
@@ -26,7 +25,7 @@ public final class IslandService implements IOneBlockService {
     private final IslandBook book;
     private final Supplier<Content> content;
     private final LongSupplier clock;
-    private final PurchaseRule purchases = new PurchaseRule();
+    private final PhaseRule phases = new PhaseRule();
 
     public IslandService(IslandBook book, Supplier<Content> content, LongSupplier clock) {
         this.book = book;
@@ -137,65 +136,26 @@ public final class IslandService implements IOneBlockService {
         return Reply.ok("oneblock.kick.done", "player", memberName);
     }
 
-    // ------------------------------------------------------------------ shards
+    // ------------------------------------------------------------------ phases
 
-    public Reply unlock(UUID player, IslandDimension dimension) {
-        Optional<Island> island = book.ofPlayer(player);
-        if (island.isEmpty()) {
-            return Reply.refused("oneblock.refuse.no-island");
-        }
+    /**
+     * Opens what every island's phases have reached but it does not have yet — islands from before phases, and after
+     * an owner moved an opening phase earlier. Breaking would do it too, on the island's next break.
+     *
+     * @return how many islands got something opened
+     */
+    public int openDue() {
         Content now = content.get();
-        PurchaseRule.Verdict verdict = purchases.unlock(now, island.get(), player, dimension);
-        if (!verdict.allowed()) {
-            return refusedFor(verdict, island.get(), dimension.nameKey());
+        int opened = 0;
+        for (Island island : book.all()) {
+            if (phases.due(now, island).isEmpty()) {
+                continue;
+            }
+            if (book.change(island.id(), it -> phases.opening(now, it)).done()) {
+                opened++;
+            }
         }
-        IslandBook.Changed changed = book.change(island.get().id(), it -> {
-            PurchaseRule.Verdict again = purchases.unlock(now, it, player, dimension);
-            return again.allowed() ? it.spending(again.price()).flatMap(paid -> paid.unlocking(dimension))
-                    : Optional.empty();
-        });
-        return changed.done() ? Reply.ok("oneblock.unlock.done", "dimension-key", dimension.nameKey(),
-                "price", String.valueOf(verdict.price()))
-                : Reply.refused("oneblock.buy.too-poor", "price", String.valueOf(verdict.price()),
-                "shards", String.valueOf(changed.island().map(Island::shards).orElse(0L)));
-    }
-
-    public Reply buy(UUID player, IslandDimension dimension, String upgradeId) {
-        Optional<Island> island = book.ofPlayer(player);
-        if (island.isEmpty()) {
-            return Reply.refused("oneblock.refuse.no-island");
-        }
-        Content now = content.get();
-        PurchaseRule.Verdict verdict = purchases.upgrade(now, island.get(), player, dimension, upgradeId);
-        String name = now.upgrade(upgradeId).map(Upgrade::name).orElse(upgradeId);
-        if (!verdict.allowed()) {
-            return refusedFor(verdict, island.get(), dimension.nameKey(), "upgrade", name);
-        }
-        IslandBook.Changed changed = book.change(island.get().id(), it -> {
-            PurchaseRule.Verdict again = purchases.upgrade(now, it, player, dimension, upgradeId);
-            int level = it.block(dimension).map(block -> block.level(upgradeId)).orElse(0);
-            return again.allowed() ? it.spending(again.price())
-                    .map(paid -> paid.withBlock(dimension, block -> block.withLevel(upgradeId, level + 1)))
-                    : Optional.empty();
-        });
-        if (!changed.done()) {
-            return Reply.refused("oneblock.buy.too-poor", "price", String.valueOf(verdict.price()),
-                    "shards", String.valueOf(changed.island().map(Island::shards).orElse(0L)));
-        }
-        int level = changed.island().flatMap(it -> it.block(dimension)).map(block -> block.level(upgradeId)).orElse(0);
-        return Reply.ok("oneblock.buy.done", "upgrade", name, "level", String.valueOf(level),
-                "price", String.valueOf(verdict.price()));
-    }
-
-    private static Reply refusedFor(PurchaseRule.Verdict verdict, Island island, String dimensionKey,
-                                    String... more) {
-        String[] values = new String[4 + more.length];
-        values[0] = "shards";
-        values[1] = String.valueOf(island.shards());
-        values[2] = "dimension-key";
-        values[3] = dimensionKey;
-        System.arraycopy(more, 0, values, 4, more.length);
-        return Reply.refused(verdict.refusal().orElseThrow(), values);
+        return opened;
     }
 
     // ------------------------------------------------------------------ arriving

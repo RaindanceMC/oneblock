@@ -8,6 +8,7 @@ import de.raindancer.modules.oneblock.model.Content;
 import de.raindancer.modules.oneblock.model.Island;
 import de.raindancer.modules.oneblock.model.IslandDimension;
 import de.raindancer.modules.oneblock.model.Spawn;
+import de.raindancer.modules.oneblock.rules.PhaseRule;
 import de.raindancer.modules.oneblock.service.IslandServer;
 import de.raindancer.modules.oneblock.service.SidebarService;
 import net.kyori.adventure.text.Component;
@@ -21,7 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * The island's page: its three dimensions (go, or what unlocking costs), the upgrades, the team, the spawn and the
+ * The island's page: its three dimensions (go, or which phase opens them), the phases, the team, the spawn and the
  * sidebar — and giving it up, behind a confirmation.
  */
 public final class IslandMenu extends Menu implements IOneBlockScreen {
@@ -30,6 +31,7 @@ public final class IslandMenu extends Menu implements IOneBlockScreen {
 
     private final OneBlockServices services;
     private final IslandServer islands;
+    private final PhaseRule phases = new PhaseRule();
 
     public IslandMenu(OneBlockServices services, IslandServer islands, Player viewer, Menu parent) {
         super(viewer, islands.brand(), parent);
@@ -60,13 +62,14 @@ public final class IslandMenu extends Menu implements IOneBlockScreen {
         boolean owner = island.owner().equals(viewer.getUniqueId());
         set(MenuLayout.HEADER_SUBJECT, Icons.of(Material.GRASS_BLOCK, "<green>" + island.ownerName() + "'s island",
                 "<gray>Money: " + services.messages().raw(island.mode().badgeKey()),
-                "<gray>Shards: <light_purple>" + String.format("%,d", island.shards()),
+                "<gray>Phase: <yellow>" + phases.at(content, IslandDimension.OVERWORLD,
+                        island.block(IslandDimension.OVERWORLD).map(block -> block.broken()).orElse(0L)).name(),
                 "<gray>Team: <white>" + island.everyone().size() + "<gray>/" + content.teamSize(),
                 "<gray>Blocks broken: <white>" + String.format("%,d", island.totalBroken())));
 
         IslandDimension[] dimensions = IslandDimension.values();
         for (int i = 0; i < dimensions.length; i++) {
-            dimension(island, content, owner, dimensions[i], DIMENSION_COLUMNS[i]);
+            dimension(island, content, dimensions[i], DIMENSION_COLUMNS[i]);
         }
         band(MenuLayout.WHO, 7, Icons.head(viewer.getUniqueId(), "<white>Team",
                         "<gray>" + island.everyone().size() + " of " + content.teamSize() + " places taken.",
@@ -74,10 +77,10 @@ public final class IslandMenu extends Menu implements IOneBlockScreen {
                 click -> new TeamMenu(services, islands, viewer, this).open());
 
         IslandDimension here = Island.dimensionOf(viewer.getWorld().getName()).orElse(IslandDimension.OVERWORLD);
-        band(MenuLayout.RULES, 2, Icons.of(Material.ANVIL, "<light_purple>Upgrades",
-                        "<gray>What your blocks turn into,", "<gray>paid with shards.", "",
-                        "<yellow>Click to open them."),
-                click -> new UpgradesMenu(services, islands, viewer, this,
+        band(MenuLayout.RULES, 2, Icons.of(Material.EXPERIENCE_BOTTLE, "<yellow>Phases",
+                        "<gray>What your blocks turn into,", "<gray>now and further down.", "",
+                        "<yellow>Click to see them."),
+                click -> new PhasesMenu(services, islands, viewer, this,
                         island.unlocked(here) ? here : IslandDimension.OVERWORLD).open());
         boolean onOwn = islands.book().ofWorld(viewer.getWorld().getName())
                 .filter(standing -> standing.id().equals(island.id())).isPresent();
@@ -118,11 +121,12 @@ public final class IslandMenu extends Menu implements IOneBlockScreen {
                 }).open());
     }
 
-    private void dimension(Island island, Content content, boolean owner, IslandDimension dimension, int column) {
+    private void dimension(Island island, Content content, IslandDimension dimension, int column) {
         String name = services.messages().raw(dimension.nameKey());
         if (island.unlocked(dimension)) {
             long broken = island.block(dimension).map(block -> block.broken()).orElse(0L);
             band(MenuLayout.WHO, column, Icons.of(dimension.icon(), "<green>" + name,
+                            "<gray>Phase: <yellow>" + phases.at(content, dimension, broken).name(),
                             "<gray>Blocks broken: <white>" + String.format("%,d", broken), "",
                             "<yellow>Click to go there."),
                     click -> {
@@ -131,22 +135,16 @@ public final class IslandMenu extends Menu implements IOneBlockScreen {
                     });
             return;
         }
-        long price = content.unlockPrice(dimension).orElse(0L);
-        boolean affordable = island.shards() >= price;
-        band(MenuLayout.WHO, column, owner && affordable, Icons.of(dimension.icon(), "<gray>" + name + " <dark_gray>(locked)",
-                        "<gray>Unlock for <light_purple>" + String.format("%,d", price) + " shards<gray>.",
-                        "<gray>The island has <light_purple>" + String.format("%,d", island.shards()) + "<gray>.", "",
-                        "<yellow>Click to unlock it."),
-                owner ? "The island needs " + String.format("%,d", price - island.shards()) + " more shards."
-                        : "Only the owner unlocks dimensions.",
-                click -> new ConfirmScreen(islands.brand(), viewer, this, "Unlock " + name + "?",
-                        List.of("<gray>Costs <light_purple>" + String.format("%,d", price) + " shards<gray>.",
-                                "<gray>Shards spent are not given back."),
-                        () -> {
-                            IOneBlockScreen.tell(services.messages(), viewer,
-                                    islands.islands().unlock(viewer.getUniqueId(), dimension));
-                            new IslandMenu(services, islands, viewer, parent()).open();
-                        }).open());
+        Optional<PhaseRule.Opener> opener = phases.opener(content, island, dimension);
+        List<String> lore = new ArrayList<>();
+        opener.ifPresentOrElse(how -> {
+            lore.add("<gray>Opens when " + services.messages().raw(how.in().nameKey()) + " reaches");
+            lore.add("<gray>the <yellow>" + how.phase().name() + "<gray> phase.");
+            lore.add("<white>" + String.format("%,d", how.toGo()) + "<gray> blocks to go.");
+        }, () -> lore.add("<gray>No phase opens it on this server."));
+        band(MenuLayout.WHO, column, false, Icons.of(dimension.icon(), "<gray>" + name + " <dark_gray>(locked)", lore),
+                opener.map(how -> String.format("%,d", how.toGo()) + " blocks to go.").orElse("Not open here."),
+                click -> { });
     }
 
     @Override

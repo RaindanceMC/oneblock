@@ -12,18 +12,18 @@ import java.util.UUID;
 import java.util.function.UnaryOperator;
 
 /**
- * One island: its team, the money it plays with, its shards, and a one block per unlocked dimension. Immutable — every
+ * One island: its team, the money it plays with, and a one block per unlocked dimension. Immutable — every
  * change is a new island, so the book can swap one in atomically and a reader never sees half a change.
  *
  * <p>The rules that must hold whatever path a change takes are kept here, at the change: the owner is always on the
- * team, the economy is chosen once, shards are never spent into debt.
+ * team, the economy is chosen once.
  *
  * @param members    the team besides the owner, in the order they joined
  * @param blocks     one per unlocked dimension
  * @param spawns     where the team arrives, per dimension; absent means on top of the block
  * @param autoUnload whether the world is unloaded once nobody is on it
  */
-public record Island(UUID id, UUID owner, String ownerName, EconomyMode mode, long created, long shards,
+public record Island(UUID id, UUID owner, String ownerName, EconomyMode mode, long created,
                      List<UUID> members, Map<IslandDimension, IslandBlock> blocks, Map<IslandDimension, Spawn> spawns,
                      boolean autoUnload, Optional<Hold> hold) {
 
@@ -35,7 +35,6 @@ public record Island(UUID id, UUID owner, String ownerName, EconomyMode mode, lo
         blocks = immutable(blocks);
         spawns = immutable(spawns);
         ownerName = ownerName == null ? "" : ownerName;
-        shards = Math.max(0, shards);
         hold = hold == null ? Optional.empty() : hold;
     }
 
@@ -51,7 +50,7 @@ public record Island(UUID id, UUID owner, String ownerName, EconomyMode mode, lo
     }
 
     public static Island create(UUID id, UUID owner, String ownerName, EconomyMode mode, long now) {
-        return new Island(id, owner, ownerName, mode, now, 0, List.of(),
+        return new Island(id, owner, ownerName, mode, now, List.of(),
                 Map.of(IslandDimension.OVERWORLD, IslandBlock.fresh(IslandDimension.OVERWORLD.start())), Map.of(), true, Optional.empty());
     }
 
@@ -111,7 +110,7 @@ public record Island(UUID id, UUID owner, String ownerName, EconomyMode mode, lo
         }
         List<UUID> more = new ArrayList<>(members);
         more.add(player);
-        return new Island(id, owner, ownerName, mode, created, shards, more, blocks, spawns, autoUnload, hold);
+        return new Island(id, owner, ownerName, mode, created, more, blocks, spawns, autoUnload, hold);
     }
 
     /** The owner is never taken off: an island without an owner is nobody's to decide about. */
@@ -121,35 +120,22 @@ public record Island(UUID id, UUID owner, String ownerName, EconomyMode mode, lo
         }
         List<UUID> fewer = new ArrayList<>(members);
         fewer.remove(player);
-        return new Island(id, owner, ownerName, mode, created, shards, fewer, blocks, spawns, autoUnload, hold);
+        return new Island(id, owner, ownerName, mode, created, fewer, blocks, spawns, autoUnload, hold);
     }
 
     public Island withOwnerName(String name) {
-        return new Island(id, owner, name, mode, created, shards, members, blocks, spawns, autoUnload, hold);
+        return new Island(id, owner, name, mode, created, members, blocks, spawns, autoUnload, hold);
     }
 
-    // ------------------------------------------------------------------ money and shards
+    // ------------------------------------------------------------------ money
 
     /** The economy, once: empty when it was chosen already or the choice is no choice. */
     public Optional<Island> decide(EconomyMode chosen) {
         if (mode.decided() || chosen == null || !chosen.decided()) {
             return Optional.empty();
         }
-        return Optional.of(new Island(id, owner, ownerName, chosen, created, shards, members, blocks, spawns,
+        return Optional.of(new Island(id, owner, ownerName, chosen, created, members, blocks, spawns,
                 autoUnload, hold));
-    }
-
-    public Island withShardsAdded(long amount) {
-        return new Island(id, owner, ownerName, mode, created, Math.max(0, shards + amount), members, blocks, spawns,
-                autoUnload, hold);
-    }
-
-    /** Empty when the island cannot afford it. */
-    public Optional<Island> spending(long amount) {
-        if (amount < 0 || shards < amount) {
-            return Optional.empty();
-        }
-        return Optional.of(withShardsAdded(-amount));
     }
 
     // ------------------------------------------------------------------ blocks
@@ -173,7 +159,7 @@ public record Island(UUID id, UUID owner, String ownerName, EconomyMode mode, lo
         }
         Map<IslandDimension, IslandBlock> more = editable(blocks);
         more.put(dimension, IslandBlock.fresh(spot));
-        return Optional.of(new Island(id, owner, ownerName, mode, created, shards, members, more, spawns, autoUnload,
+        return Optional.of(new Island(id, owner, ownerName, mode, created, members, more, spawns, autoUnload,
                 hold));
     }
 
@@ -185,7 +171,7 @@ public record Island(UUID id, UUID owner, String ownerName, EconomyMode mode, lo
         }
         Map<IslandDimension, IslandBlock> changed = editable(blocks);
         changed.put(dimension, change.apply(block));
-        return new Island(id, owner, ownerName, mode, created, shards, members, changed, spawns, autoUnload, hold);
+        return new Island(id, owner, ownerName, mode, created, members, changed, spawns, autoUnload, hold);
     }
 
     public Island broken(IslandDimension dimension) {
@@ -217,16 +203,16 @@ public record Island(UUID id, UUID owner, String ownerName, EconomyMode mode, lo
         } else {
             changed.put(dimension, spawn);
         }
-        return new Island(id, owner, ownerName, mode, created, shards, members, blocks, changed, autoUnload, hold);
+        return new Island(id, owner, ownerName, mode, created, members, blocks, changed, autoUnload, hold);
     }
 
     // ------------------------------------------------------------------ admins
 
     public Island withHold(Optional<Hold> held) {
-        return new Island(id, owner, ownerName, mode, created, shards, members, blocks, spawns, autoUnload, held);
+        return new Island(id, owner, ownerName, mode, created, members, blocks, spawns, autoUnload, held);
     }
 
     public Island withAutoUnload(boolean on) {
-        return new Island(id, owner, ownerName, mode, created, shards, members, blocks, spawns, on, hold);
+        return new Island(id, owner, ownerName, mode, created, members, blocks, spawns, on, hold);
     }
 }

@@ -1,9 +1,13 @@
 package de.raindancer.modules.oneblock.service;
 
 import de.raindancer.modules.oneblock.OneBlockSettings;
+import de.raindancer.modules.oneblock.model.Content;
 import de.raindancer.modules.oneblock.model.Hold;
 import de.raindancer.modules.oneblock.model.Island;
+import de.raindancer.modules.oneblock.model.IslandBlock;
+import de.raindancer.modules.oneblock.model.IslandDimension;
 import de.raindancer.modules.oneblock.model.Reply;
+import de.raindancer.modules.oneblock.rules.PhaseRule;
 import de.raindancer.modules.oneblock.store.IslandBook;
 
 import java.time.Duration;
@@ -12,20 +16,24 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.LongSupplier;
+import java.util.function.Supplier;
 
 /**
- * Staff's say over islands: up or down for a while or for good, auto-unload on or off, shards given or taken. Every
+ * Staff's say over islands: up or down for a while or for good, auto-unload on or off, a block moved through its phases. Every
  * change takes effect at once ({@code act} runs the lifecycle for that island) and survives a restart.
  */
 public final class AdminService implements IOneBlockService {
 
     private final IslandBook book;
     private final LongSupplier clock;
+    private final Supplier<Content> content;
     private final Consumer<Island> act;
+    private final PhaseRule phases = new PhaseRule();
 
-    public AdminService(IslandBook book, LongSupplier clock, Consumer<Island> act) {
+    public AdminService(IslandBook book, LongSupplier clock, Supplier<Content> content, Consumer<Island> act) {
         this.book = book;
         this.clock = clock;
+        this.content = content;
         this.act = act;
     }
 
@@ -74,13 +82,24 @@ public final class AdminService implements IOneBlockService {
                 "player", changed.island().map(Island::ownerName).orElse("?"));
     }
 
-    public Reply shards(UUID island, long amount) {
-        IslandBook.Changed changed = book.change(island, it -> Optional.of(it.withShardsAdded(amount)));
+    /**
+     * Moves one block's count by {@code amount}, never below zero. A dimension its phases open opens on the team's next
+     * break, where they are told — as for any island that is behind. Lowering it closes nothing.
+     */
+    public Reply blocks(UUID island, IslandDimension dimension, long amount) {
+        Content now = content.get();
+        IslandBook.Changed changed = book.change(island, it -> it.unlocked(dimension)
+                ? Optional.of(it.withBlock(dimension, block -> block.withBroken(saturatedAdd(block.broken(), amount))))
+                : Optional.empty());
         if (!changed.done()) {
-            return Reply.refused("oneblock.admin.no-such-island");
+            return book.get(island).isPresent()
+                    ? Reply.refused("oneblock.admin.locked", "dimension-key", dimension.nameKey())
+                    : Reply.refused("oneblock.admin.no-such-island");
         }
-        return Reply.ok("oneblock.admin.shards", "player", changed.island().map(Island::ownerName).orElse("?"),
-                "shards", String.valueOf(changed.island().map(Island::shards).orElse(0L)));
+        long count = changed.island().flatMap(it -> it.block(dimension)).map(IslandBlock::broken).orElse(0L);
+        return Reply.ok("oneblock.admin.blocks", "player", changed.island().map(Island::ownerName).orElse("?"),
+                "dimension-key", dimension.nameKey(), "blocks", String.format("%,d", count),
+                "phase", phases.at(now, dimension, count).name());
     }
 
     /**

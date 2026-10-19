@@ -22,16 +22,16 @@ public final class OneBlockCommands {
         return List.of(ModuleCommand.of("island", "Your OneBlock island, and invites from anywhere on the network",
                                 new IslandCommand(OneBlockCommands::require))
                         .aliased("is")
-                        .taking("menu", "nether", "end", "unlock <nether|end>", "upgrades [dimension]", "team",
+                        .taking("menu", "nether", "end", "phases [dimension]", "team",
                                 "invite <player>", "guest <player>", "accept [player]", "deny [player]",
                                 "kick <player>", "leave", "setspawn", "info [player]", "sidebar"),
-                ModuleCommand.of("islandadmin", "Keep islands up or down, their auto-unload, shards, migration",
+                ModuleCommand.of("islandadmin", "Keep islands up or down, their auto-unload, block counts, migration",
                                 new IslandAdminCommand(OneBlockCommands::require))
                         .aliased("isa", "obadmin")
                         .needing(PermissionNodes.ADMIN)
                         .taking("list", "info <island>", "up <island> [time|forever]", "down <island> [time|forever]",
                                 "release <island>", "autounload <island> on|off", "tp <island> [dimension]",
-                                "shards <island> <amount>", "reload", "migrate [confirm]"));
+                                "blocks <island> <amount> [dimension]", "reload", "migrate [confirm]"));
     }
 
     static void ready(OneBlockServices live) {

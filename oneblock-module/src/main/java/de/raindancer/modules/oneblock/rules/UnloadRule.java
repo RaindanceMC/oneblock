@@ -6,7 +6,7 @@ import java.util.Optional;
 
 /**
  * Whether an island's worlds should be up. An admin's hold beats everything; past that an island is up while
- * somebody is on it, or its block is working for an online team, and goes once it has sat empty for the grace —
+ * somebody is on it, and goes once it has sat empty for the grace —
  * unless its auto-unload was switched off, which keeps it up and brings it back after a restart.
  */
 public final class UnloadRule implements IOneBlockRule {
@@ -24,10 +24,9 @@ public final class UnloadRule implements IOneBlockRule {
 
     /**
      * @param emptySince when it was first seen empty; negative while it is not known to be
-     * @param working    its block is breaking itself for a team member online
      */
     public record Facts(boolean loaded, int players, long emptySince, boolean autoUnload, Optional<Hold> hold,
-                        boolean working, long now, long graceMillis) {
+                        long now, long graceMillis) {
     }
 
     public Decision decide(Facts facts) {
@@ -45,7 +44,7 @@ public final class UnloadRule implements IOneBlockRule {
         if (!facts.loaded()) {
             return Decision.NOTHING;
         }
-        if (facts.players() > 0 || facts.working()) {
+        if (facts.players() > 0) {
             return Decision.STAY;
         }
         if (facts.emptySince() < 0) {

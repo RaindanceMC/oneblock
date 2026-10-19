@@ -4,12 +4,10 @@ import de.raindancer.modules.oneblock.model.Island;
 import de.raindancer.modules.oneblock.service.OneBlockService;
 import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Item;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockBurnEvent;
-import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockFadeEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
@@ -18,10 +16,7 @@ import org.bukkit.event.block.LeavesDecayEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -40,19 +35,6 @@ public final class OneBlockListener implements IOneBlockListener {
     public void onBreak(BlockBreakEvent event) {
         oneBlock.targetOf(event.getBlock()).ifPresent(target ->
                 oneBlock.broken(target, event.getPlayer(), event.getBlock().getLocation()));
-    }
-
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onDrops(BlockDropItemEvent event) {
-        oneBlock.targetOf(event.getBlock()).ifPresent(target -> {
-            for (Item item : event.getItems()) {
-                List<ItemStack> one = new ArrayList<>(List.of(item.getItemStack()));
-                oneBlock.smelt(target, one);
-                if (!one.isEmpty() && !one.getFirst().equals(item.getItemStack())) {
-                    item.setItemStack(one.getFirst());
-                }
-            }
-        });
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

@@ -14,7 +14,6 @@ import de.raindancer.modules.oneblock.model.Spawn;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,7 +21,8 @@ import java.util.UUID;
 
 /**
  * An island as one JSON document, the row's {@code data}. A field this version does not know is skipped and one it
- * expects but does not find takes its default, so an island written by a newer or older jar still reads.
+ * expects but does not find takes its default, so an island written by a newer or older jar still reads — one from
+ * before phases with its shards and upgrades too, which are simply not read.
  */
 public final class IslandCodec {
 
@@ -36,7 +36,6 @@ public final class IslandCodec {
         json.addProperty("ownerName", island.ownerName());
         json.addProperty("mode", island.mode().wire());
         json.addProperty("created", island.created());
-        json.addProperty("shards", island.shards());
         JsonArray members = new JsonArray();
         island.members().forEach(member -> members.add(member.toString()));
         json.add("members", members);
@@ -47,9 +46,6 @@ public final class IslandCodec {
             one.addProperty("y", block.spot().y());
             one.addProperty("z", block.spot().z());
             one.addProperty("broken", block.broken());
-            JsonObject upgrades = new JsonObject();
-            block.upgrades().forEach(upgrades::addProperty);
-            one.add("upgrades", upgrades);
             blocks.add(dimension.id(), one);
         });
         json.add("blocks", blocks);
@@ -95,13 +91,8 @@ public final class IslandCodec {
                         continue;
                     }
                     JsonObject one = entry.getValue().getAsJsonObject();
-                    Map<String, Integer> upgrades = new LinkedHashMap<>();
-                    if (one.has("upgrades")) {
-                        one.getAsJsonObject("upgrades").entrySet()
-                                .forEach(upgrade -> upgrades.put(upgrade.getKey(), upgrade.getValue().getAsInt()));
-                    }
                     blocks.put(dimension.get(), new IslandBlock(new BlockSpot(one.get("x").getAsInt(),
-                            one.get("y").getAsInt(), one.get("z").getAsInt()), number(one, "broken"), upgrades));
+                            one.get("y").getAsInt(), one.get("z").getAsInt()), number(one, "broken")));
                 }
             }
             if (!blocks.containsKey(IslandDimension.OVERWORLD)) {
@@ -126,7 +117,7 @@ public final class IslandCodec {
             }
             return Optional.of(new Island(id, owner, json.has("ownerName") ? json.get("ownerName").getAsString() : "",
                     EconomyMode.fromWire(json.has("mode") ? json.get("mode").getAsString() : null).orElse(EconomyMode.UNDECIDED),
-                    number(json, "created"), number(json, "shards"), members, blocks, spawns,
+                    number(json, "created"), members, blocks, spawns,
                     !json.has("autoUnload") || json.get("autoUnload").getAsBoolean(), hold));
         } catch (RuntimeException unreadable) {
             return Optional.empty();

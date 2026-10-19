@@ -17,7 +17,7 @@ public interface IslandsGateway {
     CompletableFuture<Reply> home(Requester who);
 
     /**
-     * Something only the island server can do — {@code /island nether}, the upgrades: there, it is done at once by
+     * Something only the island server can do — {@code /island nether}, the phases: there, it is done at once by
      * whoever asked; elsewhere the island server keeps it for their arrival and they are sent over.
      *
      * @return empty when the caller should do it here and now

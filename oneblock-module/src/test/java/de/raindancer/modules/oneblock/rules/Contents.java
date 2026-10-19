@@ -2,36 +2,36 @@ package de.raindancer.modules.oneblock.rules;
 
 import de.raindancer.modules.oneblock.model.Content;
 import de.raindancer.modules.oneblock.model.IslandDimension;
-import de.raindancer.modules.oneblock.model.Upgrade;
+import de.raindancer.modules.oneblock.model.Phase;
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** A small catalogue the rule tests share: two blocks in the overworld pool, coal, a cow and auto-smelt. */
+/**
+ * A small catalogue the rule tests share. Overworld: Meadow from 0 (dirt 3, oak log 1, cows at 10%), Caves from 100
+ * (stone, opens the nether), Depths from 300 (diamond ore, opens the end). Nether: Wastes from 0. The end has none of
+ * its own, so it gets the fallback.
+ */
 final class Contents {
 
-    static final Upgrade COAL = new Upgrade("coal", "Coal", Upgrade.Kind.BLOCK, Material.COAL_ORE, null,
-            Set.of(IslandDimension.OVERWORLD), List.of(new Upgrade.Level(5, 20), new Upgrade.Level(10, 50)));
-    static final Upgrade COW = new Upgrade("cow", "Cows", Upgrade.Kind.MOB, Material.COW_SPAWN_EGG, EntityType.COW,
-            Set.of(IslandDimension.OVERWORLD), List.of(new Upgrade.Level(5, 30)));
-    static final Upgrade SMELT = new Upgrade("smelt", "Auto-smelt", Upgrade.Kind.SMELT, Material.FURNACE, null,
-            Set.of(IslandDimension.OVERWORLD, IslandDimension.NETHER), List.of(new Upgrade.Level(50, 100)));
-    static final Upgrade QUARTZ = new Upgrade("quartz", "Quartz", Upgrade.Kind.BLOCK, Material.NETHER_QUARTZ_ORE, null,
-            Set.of(IslandDimension.NETHER), List.of(new Upgrade.Level(80, 10), new Upgrade.Level(90, 10)));
+    static final Phase MEADOW = new Phase("meadow", "Meadow", 0, Material.GRASS_BLOCK,
+            List.of(new Phase.Weighted(Material.DIRT, 3), new Phase.Weighted(Material.OAK_LOG, 1)),
+            List.of(new Phase.Mob(EntityType.COW, 10)), Set.of());
+    static final Phase CAVES = new Phase("caves", "Caves", 100, Material.STONE,
+            List.of(new Phase.Weighted(Material.STONE, 1)), List.of(), Set.of(IslandDimension.NETHER));
+    static final Phase DEPTHS = new Phase("depths", "Depths", 300, Material.DIAMOND_ORE,
+            List.of(new Phase.Weighted(Material.DIAMOND_ORE, 1)),
+            List.of(new Phase.Mob(EntityType.ZOMBIE, 60), new Phase.Mob(EntityType.SKELETON, 60)),
+            Set.of(IslandDimension.END));
+    static final Phase WASTES = new Phase("wastes", "Wastes", 0, Material.NETHERRACK,
+            List.of(new Phase.Weighted(Material.NETHERRACK, 1)), List.of(), Set.of());
 
     static Content content() {
-        Map<String, Upgrade> upgrades = new LinkedHashMap<>();
-        for (Upgrade upgrade : List.of(COAL, COW, SMELT, QUARTZ)) {
-            upgrades.put(upgrade.id(), upgrade);
-        }
-        return new Content(Map.of(
-                IslandDimension.OVERWORLD, List.of(new Content.Weighted(Material.DIRT, 3), new Content.Weighted(Material.OAK_LOG, 1)),
-                IslandDimension.NETHER, List.of(new Content.Weighted(Material.NETHERRACK, 1))),
-                upgrades, Map.of(IslandDimension.NETHER, 300L, IslandDimension.END, 1000L), 10, 1, 4, 8);
+        return new Content(Map.of(IslandDimension.OVERWORLD, List.of(DEPTHS, MEADOW, CAVES),
+                IslandDimension.NETHER, List.of(WASTES)), 4, 8);
     }
 
     private Contents() {

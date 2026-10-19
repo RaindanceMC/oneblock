@@ -2,15 +2,15 @@ package de.raindancer.modules.oneblock.store;
 
 import de.raindancer.modules.oneblock.model.Content;
 import de.raindancer.modules.oneblock.model.IslandDimension;
-import de.raindancer.modules.oneblock.model.Upgrade;
+import de.raindancer.modules.oneblock.model.Phase;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.EntityType;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -19,124 +19,161 @@ import java.util.Set;
 
 /**
  * {@code content.yml} into {@link Content}. Nothing in the file stops the islands: a line that cannot be read is named
- * in {@link Result#problems()} and left out, so an owner's typo costs one upgrade and a log line, not the server.
+ * in {@link Result#problems()} and left out, so an owner's typo costs one block or one phase and a log line, not the
+ * server.
  */
 public final class ContentReader {
 
     public record Result(Content content, List<String> problems) {
     }
 
-    private static final int SHARD_EVERY = 10;
+    /** Why a block cannot be the one block; empty when it can. */
+    @FunctionalInterface
+    public interface BlockCheck {
+        Optional<String> refuse(Material material);
+    }
+
+    /**
+     * What falls, by name: Paper's own {@link Material#hasGravity()} only answers on a running server, and a list in
+     * the file must be checked where there is none too.
+     */
+    private static final Set<Material> FALLS = Set.of(Material.SAND, Material.RED_SAND, Material.SUSPICIOUS_SAND,
+            Material.GRAVEL, Material.SUSPICIOUS_GRAVEL, Material.ANVIL, Material.CHIPPED_ANVIL, Material.DAMAGED_ANVIL,
+            Material.DRAGON_EGG, Material.POINTED_DRIPSTONE, Material.SCAFFOLDING);
+
+    private static final String FALLING = "falls into the void the moment anything touches it";
+
+    /** On the server: nothing that falls, nothing to fall through. */
+    public static final BlockCheck ON_A_SERVER = material -> falls(material) ? Optional.of(FALLING)
+            : material.isSolid() ? Optional.empty() : Optional.of("not solid, so nobody could stand on it");
+
+
     private static final int TEAM_SIZE = 6;
     private static final int MOB_CAP = 12;
 
     private ContentReader() {
     }
 
+    public static boolean falls(Material material) {
+        return FALLS.contains(material) || material.name().endsWith("_CONCRETE_POWDER") || material.hasGravity();
+    }
+
     public static Result read(ConfigurationSection yaml) {
+        return read(yaml, ON_A_SERVER);
+    }
+
+    public static Result read(ConfigurationSection yaml, BlockCheck check) {
         List<String> problems = new ArrayList<>();
-        Map<IslandDimension, List<Content.Weighted>> pools = new EnumMap<>(IslandDimension.class);
-        ConfigurationSection poolSection = yaml.getConfigurationSection("pools");
-        if (poolSection != null) {
-            for (String key : poolSection.getKeys(false)) {
+        Map<IslandDimension, List<Phase>> phases = new EnumMap<>(IslandDimension.class);
+        ConfigurationSection all = yaml.getConfigurationSection("phases");
+        if (all != null) {
+            for (String key : all.getKeys(false)) {
                 Optional<IslandDimension> dimension = IslandDimension.byId(key);
                 if (dimension.isEmpty()) {
-                    problems.add("pools." + key + ": no such dimension (overworld, nether, end)");
+                    problems.add("phases." + key + ": no such dimension (overworld, nether, end)");
                     continue;
                 }
-                pools.put(dimension.get(), pool(poolSection.getConfigurationSection(key), "pools." + key, problems));
+                phases.put(dimension.get(), phases(all.getConfigurationSection(key), "phases." + key, check, problems));
             }
         }
-        Map<String, Upgrade> upgrades = new LinkedHashMap<>();
-        ConfigurationSection upgradeSection = yaml.getConfigurationSection("upgrades");
-        if (upgradeSection != null) {
-            for (String id : upgradeSection.getKeys(false)) {
-                upgrade(id, upgradeSection.getConfigurationSection(id), problems).ifPresent(up -> upgrades.put(id, up));
-            }
-        }
-        Map<IslandDimension, Long> prices = new EnumMap<>(IslandDimension.class);
-        prices.put(IslandDimension.NETHER, yaml.getLong("unlock.nether", 400));
-        prices.put(IslandDimension.END, yaml.getLong("unlock.end", 1200));
-        Content content = new Content(pools, upgrades, prices, yaml.getInt("shards.every-blocks", SHARD_EVERY),
-                yaml.getLong("shards.amount", 1), yaml.getInt("team-size", TEAM_SIZE), yaml.getInt("mob-cap", MOB_CAP));
+        Content content = new Content(phases, yaml.getInt("team-size", TEAM_SIZE), yaml.getInt("mob-cap", MOB_CAP));
         return new Result(content, List.copyOf(problems));
     }
 
-    private static List<Content.Weighted> pool(ConfigurationSection section, String path, List<String> problems) {
-        List<Content.Weighted> pool = new ArrayList<>();
+    private static List<Phase> phases(ConfigurationSection section, String path, BlockCheck check,
+                                      List<String> problems) {
+        List<Phase> phases = new ArrayList<>();
         if (section == null) {
-            return pool;
+            problems.add(path + ": not a section");
+            return phases;
         }
-        for (String name : section.getKeys(false)) {
-            Material material = Material.matchMaterial(name);
-            int weight = section.getInt(name, 0);
-            if (material == null || !material.isBlock()) {
-                problems.add(path + "." + name + ": not a block");
-            } else if (weight <= 0) {
-                problems.add(path + "." + name + ": a weight must be above zero");
-            } else {
-                pool.add(new Content.Weighted(material, weight));
-            }
+        for (String id : section.getKeys(false)) {
+            phase(id, section.getConfigurationSection(id), path + "." + id, check, problems).ifPresent(phases::add);
         }
-        return pool;
+        phases.stream().min(Comparator.comparingLong(Phase::from)).filter(first -> first.from() != 0)
+                .ifPresent(first -> problems.add(path + "." + first.id() + ": the first phase starts at 0, not at "
+                        + first.from() + " — read as 0"));
+        return phases;
     }
 
-    private static Optional<Upgrade> upgrade(String id, ConfigurationSection section, List<String> problems) {
-        String path = "upgrades." + id;
+    private static Optional<Phase> phase(String id, ConfigurationSection section, String path, BlockCheck check,
+                                         List<String> problems) {
         if (section == null) {
             problems.add(path + ": not a section");
             return Optional.empty();
         }
-        Optional<Upgrade.Kind> kind = Upgrade.Kind.fromWire(section.getString("kind", "block"));
-        if (kind.isEmpty()) {
-            problems.add(path + ".kind: '" + section.getString("kind") + "' is none of block, mob, smelt, auto-break");
+        long from = section.getLong("from", 0);
+        if (from < 0) {
+            problems.add(path + ".from: " + from + " is below zero");
             return Optional.empty();
         }
-        Material block = null;
-        EntityType mob = null;
-        if (kind.get() == Upgrade.Kind.BLOCK) {
-            block = Material.matchMaterial(section.getString("block", ""));
-            if (block == null || !block.isBlock()) {
-                problems.add(path + ".block: '" + section.getString("block") + "' is not a block");
-                return Optional.empty();
-            }
-        } else {
-            block = Optional.ofNullable(Material.matchMaterial(section.getString("icon", ""))).orElse(Material.CHEST);
+        List<Phase.Weighted> blocks = blocks(section.getConfigurationSection("blocks"), path + ".blocks", check, problems);
+        if (blocks.isEmpty()) {
+            problems.add(path + ": no blocks, so it has nothing to turn into");
+            return Optional.empty();
         }
-        if (kind.get() == Upgrade.Kind.MOB) {
-            mob = entity(section.getString("mob", ""));
-            if (mob == null || !mob.isAlive() || !mob.isSpawnable()) {
-                problems.add(path + ".mob: '" + section.getString("mob") + "' is not a mob that can be spawned");
-                return Optional.empty();
+        Material icon = Optional.ofNullable(Material.matchMaterial(section.getString("icon", "")))
+                .filter(Material::isItem).orElse(blocks.getFirst().material());
+        return Optional.of(new Phase(id, section.getString("name", id), from, icon, blocks,
+                mobs(section.getConfigurationSection("mobs"), path + ".mobs", problems),
+                opens(section.getStringList("opens"), path + ".opens", problems)));
+    }
+
+    private static List<Phase.Weighted> blocks(ConfigurationSection section, String path, BlockCheck check,
+                                               List<String> problems) {
+        List<Phase.Weighted> blocks = new ArrayList<>();
+        if (section == null) {
+            return blocks;
+        }
+        for (String name : section.getKeys(false)) {
+            Material material = Material.matchMaterial(name);
+            int weight = section.getInt(name, 0);
+            Optional<String> refused = material == null ? Optional.empty() : check.refuse(material);
+            if (material == null || !material.isBlock()) {
+                problems.add(path + "." + name + ": not a block");
+            } else if (refused.isPresent()) {
+                problems.add(path + "." + name + ": " + refused.get());
+            } else if (weight <= 0) {
+                problems.add(path + "." + name + ": a weight must be above zero");
+            } else {
+                blocks.add(new Phase.Weighted(material, weight));
             }
         }
-        Set<IslandDimension> dimensions = EnumSet.noneOf(IslandDimension.class);
-        for (String raw : section.getStringList("dimensions")) {
-            Optional<IslandDimension> dimension = IslandDimension.byId(raw);
+        return blocks;
+    }
+
+    private static List<Phase.Mob> mobs(ConfigurationSection section, String path, List<String> problems) {
+        List<Phase.Mob> mobs = new ArrayList<>();
+        if (section == null) {
+            return mobs;
+        }
+        for (String name : section.getKeys(false)) {
+            EntityType type = entity(name);
+            double chance = section.getDouble(name, 0);
+            if (type == null || !type.isAlive() || !type.isSpawnable()) {
+                problems.add(path + "." + name + ": not a mob that can be spawned");
+            } else if (chance <= 0) {
+                problems.add(path + "." + name + ": a chance must be above zero");
+            } else {
+                mobs.add(new Phase.Mob(type, Math.min(100, chance)));
+            }
+        }
+        return mobs;
+    }
+
+    private static Set<IslandDimension> opens(List<String> raw, String path, List<String> problems) {
+        Set<IslandDimension> opens = EnumSet.noneOf(IslandDimension.class);
+        for (String name : raw) {
+            Optional<IslandDimension> dimension = IslandDimension.byId(name);
             if (dimension.isEmpty()) {
-                problems.add(path + ".dimensions: no such dimension '" + raw + "'");
+                problems.add(path + ": no such dimension '" + name + "'");
+            } else if (dimension.get() == IslandDimension.OVERWORLD) {
+                problems.add(path + ": the overworld is always open");
             } else {
-                dimensions.add(dimension.get());
+                opens.add(dimension.get());
             }
         }
-        if (dimensions.isEmpty()) {
-            problems.add(path + ": in no dimension, so nobody could buy it");
-            return Optional.empty();
-        }
-        List<Upgrade.Level> levels = new ArrayList<>();
-        for (Map<?, ?> raw : section.getMapList("levels")) {
-            if (raw.get("chance") instanceof Number chance && raw.get("price") instanceof Number price
-                    && chance.doubleValue() > 0 && price.longValue() >= 0) {
-                levels.add(new Upgrade.Level(Math.min(100, chance.doubleValue()), price.longValue()));
-            } else {
-                problems.add(path + ".levels: " + raw + " needs a chance above 0 and a price");
-            }
-        }
-        if (levels.isEmpty()) {
-            problems.add(path + ": no levels");
-            return Optional.empty();
-        }
-        return Optional.of(new Upgrade(id, section.getString("name", id), kind.get(), block, mob, dimensions, levels));
+        return opens;
     }
 
     private static EntityType entity(String name) {

@@ -4,6 +4,7 @@ import de.raindancer.core.data.store.YamlStore;
 import de.raindancer.core.platform.log.LogChannel;
 import de.raindancer.modules.oneblock.OneBlockModule;
 import de.raindancer.modules.oneblock.model.Content;
+import de.raindancer.modules.oneblock.model.IslandDimension;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.IOException;
@@ -49,8 +50,10 @@ public final class ContentStore {
         ContentReader.Result result = ContentReader.read(yaml);
         current.set(result.content());
         result.problems().forEach(problem -> log.warn("content.yml: {}", problem));
-        log.info("Island content: {} upgrade(s), team size {}, a shard every {} block(s).",
-                result.content().allUpgrades().size(), result.content().teamSize(), result.content().shardEvery());
+        log.info("Island content: {} / {} / {} phase(s) in the overworld / nether / end, team size {}.",
+                result.content().phasesOf(IslandDimension.OVERWORLD).size(),
+                result.content().phasesOf(IslandDimension.NETHER).size(),
+                result.content().phasesOf(IslandDimension.END).size(), result.content().teamSize());
         return result.problems();
     }
 

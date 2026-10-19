@@ -2,7 +2,6 @@ package de.raindancer.modules.oneblock.rules;
 
 import de.raindancer.modules.oneblock.model.BentoIsland;
 import de.raindancer.modules.oneblock.model.BlockSpot;
-import de.raindancer.modules.oneblock.model.Content;
 import de.raindancer.modules.oneblock.model.EconomyMode;
 import de.raindancer.modules.oneblock.model.Island;
 import de.raindancer.modules.oneblock.model.IslandBlock;
@@ -18,23 +17,22 @@ import java.util.UUID;
 
 /**
  * What a BentoBox island becomes here. Its block keeps its exact coordinates — the island's region files are copied
- * as they are into its own world, so builds, chests and the block all stay where they were. Its breaks pay what they
- * would have earned here, and a dimension AOneBlock had already reached comes unlocked. The money is left undecided,
+ * as they are into its own world, so builds, chests and the block all stay where they were. Its count carries on
+ * into the phases here, and a dimension AOneBlock had already reached comes unlocked. The money is left undecided,
  * for its owner to choose.
  */
 public final class MigrationRule implements IOneBlockRule {
 
     private static final int REGION_BLOCKS = 512;
-    private final ShardRule shards = new ShardRule();
 
     /** The block counts at which AOneBlock reaches the nether and the end. */
     public record Thresholds(long nether, long end) {
     }
 
-    public Island island(Content content, BentoIsland bento, String ownerName, Thresholds at, UUID newId) {
+    public Island island(BentoIsland bento, String ownerName, Thresholds at, UUID newId) {
         Map<IslandDimension, IslandBlock> blocks = new EnumMap<>(IslandDimension.class);
         blocks.put(IslandDimension.OVERWORLD, new IslandBlock(new BlockSpot(bento.x(), bento.y(), bento.z()),
-                bento.lifetime(), Map.of()));
+                bento.lifetime()));
         if (bento.lifetime() >= at.nether()) {
             blocks.put(IslandDimension.NETHER, IslandBlock.fresh(IslandDimension.NETHER.start()));
         }
@@ -44,7 +42,7 @@ public final class MigrationRule implements IOneBlockRule {
         Map<IslandDimension, Spawn> spawns = new EnumMap<>(IslandDimension.class);
         bento.spawn().ifPresent(spawn -> spawns.put(IslandDimension.OVERWORLD, spawn));
         return new Island(newId, bento.owner(), ownerName, EconomyMode.UNDECIDED, bento.created(),
-                shards.earnedOver(content, bento.lifetime()), bento.members(), blocks, spawns, true, Optional.empty());
+                bento.members(), blocks, spawns, true, Optional.empty());
     }
 
     /** The region files ({@code r.X.Z.mca}) under the island's protected square. */

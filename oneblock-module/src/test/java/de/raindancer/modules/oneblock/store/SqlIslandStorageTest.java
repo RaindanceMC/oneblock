@@ -47,10 +47,9 @@ class SqlIslandStorageTest {
     private static Island full() {
         return Island.create(UUID.randomUUID(), OWNER, "Lilly", EconomyMode.SMP, 1234L)
                 .withMember(FRIEND)
-                .withShardsAdded(77)
                 .unlocking(IslandDimension.NETHER).orElseThrow()
                 .unlocking(IslandDimension.END, new BlockSpot(-800, 80, 800)).orElseThrow()
-                .withBlock(IslandDimension.OVERWORLD, block -> block.withLevel("coal", 2).brokenOnceMore())
+                .withBlock(IslandDimension.OVERWORLD, block -> block.withBroken(77).brokenOnceMore())
                 .withSpawn(IslandDimension.NETHER, new Spawn(1.5, 65, -2.5, 90f, 10f))
                 .withAutoUnload(false)
                 .withHold(Optional.of(new Hold(Hold.Kind.DOWN, Hold.FOREVER, "Raindancer118")));
@@ -70,11 +69,11 @@ class SqlIslandStorageTest {
     void saveReplaces() {
         Island island = full();
         storage.save(island);
-        storage.save(island.withoutMember(FRIEND).withShardsAdded(5));
+        storage.save(island.withoutMember(FRIEND).broken(IslandDimension.OVERWORLD));
 
         assertThat(storage.loadAll()).hasValueSatisfying(all -> {
             assertThat(all).hasSize(1);
-            assertThat(all.getFirst().shards()).isEqualTo(82);
+            assertThat(all.getFirst().totalBroken()).isEqualTo(79);
         });
         assertThat(storage.modeOf(FRIEND)).isEmpty();
         assertThat(storage.modeOf(OWNER)).contains("smp");

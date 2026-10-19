@@ -15,7 +15,8 @@ import de.raindancer.modules.oneblock.screen.ChooseModeMenu;
 import de.raindancer.modules.oneblock.screen.ConfirmScreen;
 import de.raindancer.modules.oneblock.screen.IslandMenu;
 import de.raindancer.modules.oneblock.screen.TeamMenu;
-import de.raindancer.modules.oneblock.screen.UpgradesMenu;
+import de.raindancer.modules.oneblock.screen.PhasesMenu;
+import de.raindancer.modules.oneblock.rules.PhaseRule;
 import de.raindancer.modules.oneblock.service.IslandServer;
 import de.raindancer.modules.oneblock.service.Replies;
 import de.raindancer.modules.oneblock.service.SidebarService;
@@ -45,8 +46,9 @@ public final class IslandCommand implements IOneBlockCommand {
     /** What answers on every server, without going anywhere. */
     private static final List<String> ANYWHERE = List.of("invite", "guest", "accept", "deny", "sidebar");
     /** What only the island server does. */
-    private static final List<String> ON_ISLANDS = List.of("menu", "create", "home", "nether", "end", "unlock",
-            "upgrades", "team", "kick", "leave", "setspawn", "info", "economy");
+    private static final List<String> ON_ISLANDS = List.of("menu", "create", "home", "nether", "end", "phases",
+            "team", "kick", "leave", "setspawn", "info", "economy");
+    private static final PhaseRule PHASES = new PhaseRule();
     private static final List<String> SUBCOMMANDS;
 
     static {
@@ -135,21 +137,13 @@ public final class IslandCommand implements IOneBlockCommand {
             case "home" -> go(live, islands, player, own, IslandDimension.OVERWORLD);
             case "nether" -> go(live, islands, player, own, IslandDimension.NETHER);
             case "end" -> go(live, islands, player, own, IslandDimension.END);
-            case "unlock" -> {
-                Optional<IslandDimension> dimension = args.length > 1 ? IslandDimension.byId(args[1]) : Optional.empty();
-                if (dimension.isEmpty() || dimension.get() == IslandDimension.OVERWORLD) {
-                    live.messages().send(player, "oneblock.unlock.usage");
-                } else {
-                    Replies.say(live.messages(), player, islands.islands().unlock(id, dimension.get()));
-                }
-            }
-            case "upgrades" -> {
+            case "phases" -> {
                 IslandDimension dimension = args.length > 1 ? IslandDimension.byId(args[1]).orElse(IslandDimension.OVERWORLD)
                         : Island.dimensionOf(player.getWorld().getName()).orElse(IslandDimension.OVERWORLD);
                 if (own.isEmpty()) {
                     live.messages().send(player, "oneblock.refuse.no-island");
                 } else {
-                    new UpgradesMenu(live, islands, player, null,
+                    new PhasesMenu(live, islands, player, null,
                             own.get().unlocked(dimension) ? dimension : IslandDimension.OVERWORLD).open();
                 }
             }
@@ -173,9 +167,15 @@ public final class IslandCommand implements IOneBlockCommand {
             return;
         }
         if (!own.get().unlocked(dimension)) {
-            live.messages().send(player, "oneblock.go.locked-buy", "dimension", live.messages().get(dimension.nameKey()),
-                    "price", String.format("%,d", islands.currentContent().unlockPrice(dimension).orElse(0L)),
-                    "id", dimension.id());
+            Optional<PhaseRule.Opener> opener = PHASES.opener(islands.currentContent(), own.get(), dimension);
+            if (opener.isEmpty()) {
+                live.messages().send(player, "oneblock.go.locked", "dimension", live.messages().get(dimension.nameKey()));
+            } else {
+                live.messages().send(player, "oneblock.go.locked-phase",
+                        "dimension", live.messages().get(dimension.nameKey()), "phase", opener.get().phase().name(),
+                        "in", live.messages().get(opener.get().in().nameKey()),
+                        "blocks", String.format("%,d", opener.get().toGo()));
+            }
             return;
         }
         islands.travel().go(player, own.get(), dimension);
@@ -247,7 +247,9 @@ public final class IslandCommand implements IOneBlockCommand {
         List<String> dimensions = shown.unlockedDimensions().stream().map(dimension -> dimension.id()).toList();
         live.messages().send(player, "oneblock.info.island", "player", shown.ownerName(),
                 "mode", live.messages().get(shown.mode().badgeKey()), "team", String.join(", ", team),
-                "shards", String.format("%,d", shown.shards()), "blocks", String.format("%,d", shown.totalBroken()),
+                "phase", PHASES.at(islands.currentContent(), IslandDimension.OVERWORLD,
+                        shown.block(IslandDimension.OVERWORLD).map(block -> block.broken()).orElse(0L)).name(),
+                "blocks", String.format("%,d", shown.totalBroken()),
                 "dimensions", String.join(", ", dimensions));
     }
 
@@ -284,10 +286,7 @@ public final class IslandCommand implements IOneBlockCommand {
         }
         String sub = args[0].toLowerCase(Locale.ROOT);
         String typed = args[1].toLowerCase(Locale.ROOT);
-        if (sub.equals("unlock")) {
-            return Arrays.asList("nether", "end").stream().filter(name -> name.startsWith(typed)).toList();
-        }
-        if (sub.equals("upgrades")) {
+        if (sub.equals("phases")) {
             return Arrays.stream(IslandDimension.values()).map(IslandDimension::id)
                     .filter(name -> name.startsWith(typed)).toList();
         }
@@ -308,6 +307,6 @@ public final class IslandCommand implements IOneBlockCommand {
 
     @Override
     public String describe() {
-        return "your island, its dimensions, upgrades and team, and invites from anywhere on the network";
+        return "your island, its dimensions, phases and team, and invites from anywhere on the network";
     }
 }

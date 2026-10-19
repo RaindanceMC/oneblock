@@ -59,8 +59,8 @@ public final class ChooseModeMenu extends Menu implements IOneBlockScreen {
                 "<gray>no /shop, no /pay, nothing bought.",
                 "<gray>Everything comes out of the block.",
                 "",
-                "<gray>Upgrades are paid with <light_purple>shards<gray>,",
-                "<gray>earned by breaking.",
+                "<gray>Break your way through the",
+                "<gray>block's phases, one by one.",
                 "",
                 "<yellow>Click to choose Pure."), click -> confirm(EconomyMode.PURE));
         band(MenuLayout.WHO, 6, Icons.of(Material.GOLD_INGOT, "<gold>With the SMP economy",
@@ -68,7 +68,7 @@ public final class ChooseModeMenu extends Menu implements IOneBlockScreen {
                 "<gray>/shop, /sell, /pay and /balance",
                 "<gray>work on your island.",
                 "",
-                "<gray>Upgrades are still paid with <light_purple>shards<gray>.",
+                "<gray>The block's phases are the same.",
                 "",
                 "<yellow>Click to choose the SMP economy."), click -> confirm(EconomyMode.SMP));
     }

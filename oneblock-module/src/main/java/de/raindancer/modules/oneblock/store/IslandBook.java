@@ -16,7 +16,7 @@ import java.util.function.Function;
 
 /**
  * Every island in memory, the one place they are changed. A change is a function from the island to its next
- * version, applied under one lock, so two changes never both read the same shards; what changed is written behind,
+ * version, applied under one lock, so two changes never both read the same count; what changed is written behind,
  * by {@link #flush()} off the server's threads, latest version only.
  *
  * <p>One island per player is kept here, at the change: a change that would put somebody on a second island is

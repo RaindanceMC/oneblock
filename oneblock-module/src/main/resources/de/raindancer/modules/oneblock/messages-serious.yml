@@ -25,4 +25,9 @@ oneblock:
     taking-you: "<green>Taking you to <white><player></white>'s island."
   sidebar:
     shown: "<green>Sidebar shown."
-
+    last-phase: " <dark_gray>The last phase."
+  phase:
+    entered: "<green>Your block reached the phase <yellow><phase></yellow> <dark_gray>(<number>/<of>, <dimension>)</dark_gray><green>."
+    opened: "<light_purple><white><dimension></white> is now open on your island. <click:run_command:'/island <id>'><yellow>[Go there]</yellow></click>"
+  go:
+    locked-phase: "<red>Not open yet: <white><dimension></white> opens when <white><in></white> reaches <yellow><phase></yellow> (<white><blocks></white> blocks left). <click:run_command:'/island phases'><yellow>[Phases]</yellow></click>"

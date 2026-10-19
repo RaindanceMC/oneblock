@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.LongSupplier;
-import java.util.function.Predicate;
 
 /**
  * Keeps each island's worlds up exactly while they should be: the {@link UnloadRule} decides, this loads, starts the
@@ -33,21 +32,19 @@ public final class IslandLifecycle implements IOneBlockService {
     private final IslandWorlds worlds;
     private final IslandTravel travel;
     private final Messages messages;
-    private final Predicate<Island> working;
     private final LongSupplier clock;
     private final UnloadRule rule = new UnloadRule();
     private final Map<UUID, Long> emptySince = new HashMap<>();
     private volatile OneBlockSettings settings;
 
     public IslandLifecycle(Server server, LogChannel log, IslandBook book, IslandWorlds worlds, IslandTravel travel,
-                           Messages messages, Predicate<Island> working, LongSupplier clock, OneBlockSettings settings) {
+                           Messages messages, LongSupplier clock, OneBlockSettings settings) {
         this.server = server;
         this.log = log;
         this.book = book;
         this.worlds = worlds;
         this.travel = travel;
         this.messages = messages;
-        this.working = working;
         this.clock = clock;
         settings(settings);
     }
@@ -75,7 +72,7 @@ public final class IslandLifecycle implements IOneBlockService {
         List<Player> on = worlds.playersOn(island);
         UnloadRule.Decision decision = rule.decide(new UnloadRule.Facts(loaded, on.size(),
                 emptySince.getOrDefault(island.id(), -1L), island.autoUnload(), island.hold(),
-                loaded && working.test(island), now, settings.unloadMillis()));
+                now, settings.unloadMillis()));
         switch (decision) {
             case STAY -> {
                 if (!on.isEmpty()) {

@@ -1,64 +1,40 @@
 package de.raindancer.modules.oneblock.model;
 
-import org.bukkit.Material;
-
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
- * What the islands are made of: the blocks each dimension's block turns into by itself, the upgrades for sale, what
- * shards are earned at and what unlocking a dimension costs. Read from {@code content.yml}; the shipped file is the
- * default, the owner's wins.
+ * What the islands are made of: each dimension's phases, in order. Read from {@code content.yml}; the shipped file is
+ * the default, the owner's wins. Every dimension has at least one phase and the first starts at zero, whatever the
+ * file said.
  *
- * @param pools        weighted, per dimension: what a break turns the block into when no upgrade's roll hits
- * @param unlockPrices shards per dimension; the overworld is never for sale
- * @param shardEvery   one award per this many breaks of any block
- * @param shardAmount  shards per award
- * @param teamSize     the most players on one island, the owner included
- * @param mobCap       a mob upgrade stops spawning once this many of its kind are near the block
+ * @param teamSize the most players on one island, the owner included
+ * @param mobCap   a phase stops spawning a mob once this many of its kind are near the block
  */
-public record Content(Map<IslandDimension, List<Weighted>> pools, Map<String, Upgrade> upgrades,
-                      Map<IslandDimension, Long> unlockPrices, int shardEvery, long shardAmount, int teamSize,
-                      int mobCap) {
-
-    public record Weighted(Material material, int weight) {
-    }
+public record Content(Map<IslandDimension, List<Phase>> phases, int teamSize, int mobCap) {
 
     public Content {
-        EnumMap<IslandDimension, List<Weighted>> copied = new EnumMap<>(IslandDimension.class);
-        pools.forEach((dimension, pool) -> copied.put(dimension, List.copyOf(pool)));
-        pools = Map.copyOf(copied);
-        upgrades = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(upgrades));
-        unlockPrices = Map.copyOf(unlockPrices);
-        shardEvery = Math.max(1, shardEvery);
-        shardAmount = Math.max(0, shardAmount);
+        EnumMap<IslandDimension, List<Phase>> sorted = new EnumMap<>(IslandDimension.class);
+        for (IslandDimension dimension : IslandDimension.values()) {
+            List<Phase> own = new ArrayList<>(phases.getOrDefault(dimension, List.of()));
+            own.sort(Comparator.comparingLong(Phase::from));
+            if (own.isEmpty()) {
+                own.add(Phase.fallback(dimension));
+            } else if (own.getFirst().from() != 0) {
+                own.set(0, own.getFirst().startingAt(0));
+            }
+            sorted.put(dimension, List.copyOf(own));
+        }
+        phases = Map.copyOf(sorted);
         teamSize = Math.max(1, teamSize);
         mobCap = Math.max(1, mobCap);
     }
 
-    public List<Weighted> pool(IslandDimension dimension) {
-        return pools.getOrDefault(dimension, List.of());
-    }
-
-    public Optional<Upgrade> upgrade(String id) {
-        return Optional.ofNullable(id == null ? null : upgrades.get(id));
-    }
-
-    /** In the order the file lists them, for one dimension. */
-    public List<Upgrade> upgradesFor(IslandDimension dimension) {
-        return upgrades.values().stream().filter(upgrade -> upgrade.allowedIn(dimension)).toList();
-    }
-
-    public Collection<Upgrade> allUpgrades() {
-        return upgrades.values();
-    }
-
-    public Optional<Long> unlockPrice(IslandDimension dimension) {
-        return dimension == IslandDimension.OVERWORLD ? Optional.empty()
-                : Optional.ofNullable(unlockPrices.get(dimension));
+    /** In order, the first from zero; never empty. */
+    public List<Phase> phasesOf(IslandDimension dimension) {
+        return phases.get(dimension);
     }
 }

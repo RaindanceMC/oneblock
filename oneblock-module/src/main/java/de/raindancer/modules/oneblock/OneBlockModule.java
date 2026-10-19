@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * OneBlock islands across the network. The island server keeps the islands — each its own void world, with a nether
- * and an end unlocked by shards, up while somebody plays and unloaded after — and this module runs on every server
+ * and an end that its phases open, up while somebody plays and unloaded after — and this module runs on every server
  * and carries {@code /island}: going there, and team and guest invites, between them.
  *
  * <p>Which server is the island server: on a network, the one whose id is the setting {@code proxy-server}; off one,
@@ -64,7 +64,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class OneBlockModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("oneblock", "OneBlock", "0.4.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("oneblock", "OneBlock", "0.5.0")
             .describedAs("OneBlock islands, each its own world with its own nether and end, unloaded while nobody "
                     + "plays — with /island and invites from anywhere on the network.")
             .by("Raindancer118");
@@ -73,7 +73,6 @@ public final class OneBlockModule implements FlexModule {
     /** The sidebar redraws every two seconds; unchanged lines cost nothing (Core compares). */
     private static final long SIDEBAR_TICKS = 40L;
     private static final long LIFECYCLE_TICKS = 100L;
-    private static final long AUTO_BREAK_TICKS = 20L;
     private static final long FLUSH_SECONDS = 2L;
     /** Long enough for a teleport to land before a window is opened on the player. */
     private static final long ARRIVED_TICKS = 40L;
@@ -203,12 +202,16 @@ public final class OneBlockModule implements FlexModule {
                 System::currentTimeMillis, settings.current());
         settings.onChange(islandTravel::settings);
         IslandService service = new IslandService(book, content::current, System::currentTimeMillis);
+        int opened = service.openDue();
+        if (opened > 0) {
+            log.info("{} island(s) had reached a phase that opens a dimension; it is open now.", opened);
+        }
         OneBlockService oneBlock = new OneBlockService(context.plugin(), server, book, content::current,
-                context.core().messages(), context.core().actionBars());
+                context.core().messages(), context.core().actionBars(), context.core().effects());
         IslandLifecycle lifecycle = new IslandLifecycle(server, log, book, worlds, islandTravel,
-                context.core().messages(), oneBlock::working, System::currentTimeMillis, settings.current());
+                context.core().messages(), System::currentTimeMillis, settings.current());
         settings.onChange(lifecycle::settings);
-        AdminService admin = new AdminService(book, System::currentTimeMillis,
+        AdminService admin = new AdminService(book, System::currentTimeMillis, content::current,
                 island -> lifecycle.tick(book.get(island.id()).orElse(island), System.currentTimeMillis()));
         AtomicReference<IslandServer> self = new AtomicReference<>();
         OwnIslands host = new OwnIslands(server, book, service, islandTravel, context.core().messages(),
@@ -229,7 +232,6 @@ public final class OneBlockModule implements FlexModule {
             land = null;
         }
         timer(context, LIFECYCLE_TICKS, lifecycle::tick);
-        timer(context, AUTO_BREAK_TICKS, oneBlock::autoBreak);
         var flushing = Scheduling.asyncTimer(context.plugin(), FLUSH_SECONDS, FLUSH_SECONDS, task -> {
             int failed = book.flush();
             if (failed > 0) {
