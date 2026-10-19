@@ -15,7 +15,7 @@ Needs Java 25 and read access to `packages.tstieh.de` (server ids `packages-rele
 
 ## Plugins
 
-- `oneblock-standalone/target/RainsOneBlock-0.5.0.jar` — also published as `de.raindancer.modules:oneblock-standalone:0.5.0`
+- `oneblock-standalone/target/RainsOneBlock-0.5.1.jar` — also published as `de.raindancer.modules:oneblock-standalone:0.5.1`
 
 ## Versions
 
