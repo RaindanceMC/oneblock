@@ -6,11 +6,13 @@ import de.raindancer.modules.oneblock.model.Hold;
 import de.raindancer.modules.oneblock.model.Island;
 import de.raindancer.modules.oneblock.model.IslandBlock;
 import de.raindancer.modules.oneblock.model.IslandDimension;
+import de.raindancer.modules.oneblock.model.Phase;
 import de.raindancer.modules.oneblock.model.Reply;
 import de.raindancer.modules.oneblock.rules.PhaseRule;
 import de.raindancer.modules.oneblock.store.IslandBook;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -100,6 +102,39 @@ public final class AdminService implements IOneBlockService {
         return Reply.ok("oneblock.admin.blocks", "player", changed.island().map(Island::ownerName).orElse("?"),
                 "dimension-key", dimension.nameKey(), "blocks", String.format("%,d", count),
                 "phase", phases.at(now, dimension, count).name());
+    }
+
+    /**
+     * Puts the island's block of this dimension at the start of a phase (by number, id or name) — back or forward.
+     * Whatever the phases up to there open is opened at once; nothing already open is closed.
+     */
+    public Reply phase(UUID island, IslandDimension dimension, String typed) {
+        Content now = content.get();
+        Optional<Phase> phase = phases.named(now, dimension, typed);
+        if (phase.isEmpty()) {
+            List<Phase> all = now.phasesOf(dimension);
+            StringBuilder names = new StringBuilder();
+            for (int i = 0; i < all.size(); i++) {
+                names.append(i == 0 ? "" : ", ").append(i + 1).append(' ').append(all.get(i).name());
+            }
+            return Reply.refused("oneblock.admin.no-such-phase", "typed", String.valueOf(typed),
+                    "dimension-key", dimension.nameKey(), "phases", names.toString());
+        }
+        IslandBook.Changed changed = book.change(island, it -> {
+            if (!it.unlocked(dimension)) {
+                return Optional.empty();
+            }
+            Island moved = it.withBlock(dimension, block -> block.withBroken(phase.get().from()));
+            return Optional.of(phases.opening(now, moved).orElse(moved));
+        });
+        if (!changed.done()) {
+            return book.get(island).isPresent()
+                    ? Reply.refused("oneblock.admin.locked", "dimension-key", dimension.nameKey())
+                    : Reply.refused("oneblock.admin.no-such-island");
+        }
+        return Reply.ok("oneblock.admin.phase", "player", changed.island().map(Island::ownerName).orElse("?"),
+                "dimension-key", dimension.nameKey(), "phase", phase.get().name(),
+                "blocks", String.format("%,d", phase.get().from()));
     }
 
     /**

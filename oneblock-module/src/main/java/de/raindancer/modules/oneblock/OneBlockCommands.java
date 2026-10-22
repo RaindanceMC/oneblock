@@ -31,7 +31,7 @@ public final class OneBlockCommands {
                         .needing(PermissionNodes.ADMIN)
                         .taking("list", "info <island>", "up <island> [time|forever]", "down <island> [time|forever]",
                                 "release <island>", "autounload <island> on|off", "tp <island> [dimension]",
-                                "blocks <island> <amount> [dimension]", "reload", "migrate [confirm]"));
+                                "blocks <island> <amount> [dimension]", "phase <island> <phase> [dimension]", "reload", "migrate [confirm]"));
     }
 
     static void ready(OneBlockServices live) {

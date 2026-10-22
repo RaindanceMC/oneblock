@@ -65,6 +65,25 @@ public final class PhaseRule implements IOneBlockRule {
         return current;
     }
 
+    /** The phase an admin typed: its number from 1, its id or its name — any case, spaces or underscores alike. */
+    public Optional<Phase> named(Content content, IslandDimension dimension, String typed) {
+        List<Phase> phases = content.phasesOf(dimension);
+        String wanted = plain(typed);
+        if (wanted.isEmpty()) {
+            return Optional.empty();
+        }
+        if (wanted.chars().allMatch(Character::isDigit)) {
+            int number = wanted.length() > 6 ? -1 : Integer.parseInt(wanted);
+            return number >= 1 && number <= phases.size() ? Optional.of(phases.get(number - 1)) : Optional.empty();
+        }
+        return phases.stream().filter(phase -> plain(phase.id()).equals(wanted) || plain(phase.name()).equals(wanted))
+                .findFirst();
+    }
+
+    private static String plain(String text) {
+        return text == null ? "" : text.toLowerCase(java.util.Locale.ROOT).replaceAll("[^\\p{L}\\p{N}]", "");
+    }
+
     public Standing standing(Content content, IslandDimension dimension, long broken) {
         List<Phase> phases = content.phasesOf(dimension);
         int index = 0;

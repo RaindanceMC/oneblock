@@ -40,6 +40,19 @@ class PhaseRuleTest {
     }
 
     @Test
+    @DisplayName("a phase an admin names: by its number, its id or its name, any case; nothing else")
+    void named() {
+        var content = Contents.content();
+        assertThat(rule.named(content, IslandDimension.OVERWORLD, "2")).contains(Contents.CAVES);
+        assertThat(rule.named(content, IslandDimension.OVERWORLD, "depths")).contains(Contents.DEPTHS);
+        assertThat(rule.named(content, IslandDimension.OVERWORLD, "MEADOW")).contains(Contents.MEADOW);
+        assertThat(rule.named(content, IslandDimension.OVERWORLD, "0")).isEmpty();
+        assertThat(rule.named(content, IslandDimension.OVERWORLD, "4")).isEmpty();
+        assertThat(rule.named(content, IslandDimension.OVERWORLD, "wastes")).as("the nether's, not this one's").isEmpty();
+        assertThat(rule.named(content, IslandDimension.NETHER, "wastes")).contains(Contents.WASTES);
+    }
+
+    @Test
     @DisplayName("a dimension without phases of its own still plays: one phase of its starting block")
     void fallback() {
         Phase end = rule.at(Contents.content(), IslandDimension.END, 500);

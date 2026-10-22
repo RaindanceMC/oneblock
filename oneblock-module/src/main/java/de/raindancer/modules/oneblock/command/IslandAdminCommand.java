@@ -34,7 +34,7 @@ import java.util.function.Supplier;
 public final class IslandAdminCommand implements IOneBlockCommand {
 
     private static final List<String> SUBCOMMANDS = List.of("list", "info", "up", "down", "release", "autounload",
-            "tp", "blocks", "reload", "migrate");
+            "tp", "blocks", "phase", "reload", "migrate");
 
     private final Supplier<OneBlockServices> services;
 
@@ -134,6 +134,17 @@ public final class IslandAdminCommand implements IOneBlockCommand {
                     yield Reply.refused("oneblock.admin.usage");
                 }
             }
+            case "phase" -> {
+                if (args.length < 3) {
+                    yield Reply.refused("oneblock.admin.usage");
+                }
+                Optional<IslandDimension> dimension = args.length > 3 ? IslandDimension.byId(args[3])
+                        : Optional.of(IslandDimension.OVERWORLD);
+                if (dimension.isEmpty()) {
+                    yield Reply.refused("oneblock.admin.usage");
+                }
+                yield islands.admin().phase(id, dimension.get(), args[2]);
+            }
             case "tp" -> {
                 if (!(sender instanceof Player player)) {
                     yield Reply.refused("oneblock.only-a-player");
@@ -193,15 +204,27 @@ public final class IslandAdminCommand implements IOneBlockCommand {
                 case "autounload" -> List.of("on", "off");
                 case "tp" -> List.of("overworld", "nether", "end");
                 case "blocks" -> List.of("+100", "+1000", "-100");
+                case "phase" -> phaseNames(args.length > 3 ? args[3] : "overworld");
                 default -> List.of();
             };
             return options.stream().filter(option -> option.startsWith(typed)).toList();
         }
-        if (args.length == 4 && sub.equals("blocks")) {
+        if (args.length == 4 && (sub.equals("blocks") || sub.equals("phase"))) {
             String typed = args[3].toLowerCase(Locale.ROOT);
             return List.of("overworld", "nether", "end").stream().filter(option -> option.startsWith(typed)).toList();
         }
         return List.of();
+    }
+
+    /** The phases' ids of a dimension, for typing; none while the module is down. */
+    private List<String> phaseNames(String dimension) {
+        try {
+            IslandDimension which = IslandDimension.byId(dimension).orElse(IslandDimension.OVERWORLD);
+            return services.get().islandServer().map(islands -> islands.currentContent().phasesOf(which).stream()
+                    .map(de.raindancer.modules.oneblock.model.Phase::id).toList()).orElse(List.of());
+        } catch (IllegalStateException notRunning) {
+            return List.of();
+        }
     }
 
     @Override

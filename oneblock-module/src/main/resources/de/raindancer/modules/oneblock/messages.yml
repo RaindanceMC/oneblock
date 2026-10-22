@@ -159,7 +159,7 @@ oneblock:
     hidden: "<gray>Sidebar off. <click:run_command:'/island sidebar'><yellow>[Bring it back]</yellow></click>"
 
   admin:
-    usage: "<gray>/islandadmin list · info <island> · up|down <island> [1h|1d|forever] · release <island> · autounload <island> on|off · tp <island> [dimension] · blocks <island> <+n|-n> [dimension] · reload · migrate [confirm]"
+    usage: "<gray>/islandadmin list · info <island> · up|down <island> [1h|1d|forever] · release <island> · autounload <island> on|off · tp <island> [dimension] · blocks <island> <+n|-n> [dimension] · phase <island> <phase> [dimension] · reload · migrate [confirm]"
     not-here: "<red>The islands live on the island server — run this there."
     no-such-island: "<red>No island by that name or id. A member's name works, or the start of its id from /islandadmin list."
     bad-time: "<red>'<white><time></white>' is no length of time. Try 30m, 2h, 1d or forever."
@@ -173,6 +173,8 @@ oneblock:
     auto-unload-off: "<yellow><white><player></white>'s island stays loaded now — also after a restart."
     blocks: "<green><white><player></white>'s block in <white><dimension></white> is at <white><blocks></white> now — phase <yellow><phase></yellow>."
     locked: "<red>That island has not opened <white><dimension></white>; there is no block there to move."
+    phase: "<green><white><player></white>'s block in <white><dimension></white> is in phase <yellow><phase></yellow> now — <white><blocks></white> blocks broken."
+    no-such-phase: "<red>No phase <white><typed></white> in <white><dimension></white>. <gray>Phases: <phases>"
     info: "<gray><white><player></white>'s island <dark_gray><id></dark_gray> · loaded: <white><loaded></white> · auto-unload: <white><auto></white> · held: <white><hold></white>"
     reloaded: "<green>content.yml reloaded — no problems."
     reloaded-with-problems: "<yellow>content.yml reloaded with <white><problems></white> problem(s); each was left out:"

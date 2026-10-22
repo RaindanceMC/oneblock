@@ -20,7 +20,7 @@
 
     <!-- This repository's own versions: bump them here. CI publishes a new version on the next push to master. -->
     <properties>
-        <oneblock-module.version>0.5.1</oneblock-module.version>
+        <oneblock-module.version>0.6.0</oneblock-module.version>
     </properties>
 
     <modules>
