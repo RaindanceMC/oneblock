@@ -64,7 +64,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class OneBlockModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("oneblock", "OneBlock", "0.6.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("oneblock", "OneBlock", "0.6.1")
             .describedAs("OneBlock islands, each its own world with its own nether and end, unloaded while nobody "
                     + "plays — with /island and invites from anywhere on the network.")
             .by("Raindancer118");
