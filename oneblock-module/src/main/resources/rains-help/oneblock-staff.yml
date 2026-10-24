@@ -1,0 +1,40 @@
+id: oneblock-staff
+title: OneBlock administration
+summary: Hold islands up or down, auto-unload, block counts, phases, reloading content, BentoBox migration.
+intro: |
+  Islands sleep when nobody is home. You can overrule that, and a few other things.
+icon: COMMAND_BLOCK
+category: Staff
+order: 31
+module: oneblock
+permission: rainsoneblock.admin
+aliases: [islandadmin, isa, obadmin]
+keywords: [admin, hold, unload, migrate, bentobox, phase, blocks, release]
+commands: [islandadmin]
+related: [oneblock]
+sections:
+  - question: How do I see the islands?
+    title: List and info
+    text: |
+      {cmd:/islandadmin list} opens the island list (on the console it prints it). {cmd:/islandadmin info <island>} shows one: its id, whether it is loaded, auto-unload and any hold. The island is a member's name or the start of the island's id. It works on the island server only.
+  - question: How do I keep an island up or down?
+    title: Hold up / down
+    text: |
+      {cmd:/islandadmin up <island> [time|forever]} loads it and keeps it loaded whoever plays. {cmd:/islandadmin down <island> [time|forever]} takes it down: players on it are sent to safety and only staff get on. A time like 30m, 2h or 1d, or forever. {cmd:/islandadmin release <island>} lets go. A hold that ran out clears itself.
+  - question: What is auto-unload?
+    title: Auto-unload
+    text: |
+      By default an empty island unloads after <white>{setting:oneblock:unload-seconds|seconds}</white>. {cmd:/islandadmin autounload <island> on|off} switches that for one island; off keeps it loaded — also after a restart.
+  - question: How do I go there or change progress?
+    title: Teleport, blocks, phase
+    text: |
+      {cmd:/islandadmin tp <island> [dimension]} takes you there, closed or not.
+      {cmd:/islandadmin blocks <island> <amount> [dimension]} sets the block count (+n and -n work too), {cmd:/islandadmin phase <island> <phase> [dimension]} jumps to a phase by its id. Both need the dimension unlocked.
+  - question: How do I reload the phases?
+    title: Content reload
+    text: |
+      The phases, weights, mobs and team size live in content.yml. After editing, {cmd:/islandadmin reload} reads it again; problem entries are listed and left out, and islands that now reached an opening phase get it.
+  - question: How do I migrate from BentoBox?
+    title: Migration
+    text: |
+      {cmd:/islandadmin migrate} shows what would move (BentoBox and AOneBlock must be out of plugins/ and the server restarted). {cmd:/islandadmin migrate confirm} copies the islands and puts players back where they left. Owners choose the money on their next visit.

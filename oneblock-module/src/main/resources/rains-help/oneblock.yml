@@ -1,0 +1,75 @@
+id: oneblock
+title: OneBlock island
+summary: "Your own island: one block in the void that turns into something new every time you break it."
+intro: |
+  One block. Floating in nothing. Break it and it comes back as something else — and that, dear {player}, is the entire game. It is more addictive than it sounds.
+icon: GRASS_BLOCK
+category: Games
+order: 30
+module: oneblock
+aliases: [island, is, ob, skyblock, void]
+keywords: [island, block, phases, nether, end, money, pure, sidebar, spawn, dimension, one block]
+commands: [island]
+related: [oneblock-team, oneblock-staff]
+sections:
+  - question: How do I start?
+    title: Starting
+    text: |
+      Type {run:/island}. Without an island it asks you to pick how yours plays (see the money question below) and then builds it. With one it takes you home.
+
+      You get <b>one</b> island per person. Break the block, then break it again; the island's own world is just void around it.
+  - question: Which money does my island use?
+    title: Pure or SMP money
+    text: |
+      Before the island exists you choose, <red>once and for good</red>:
+      <aqua>Pure</aqua> — no SMP money on your island. Nothing is bought, everything comes out of the block.
+      <gold>SMP economy</gold> — your SMP money comes along, so these commands work on your island: <white>{setting:oneblock:smp-money-commands}</white>.
+
+      Everybody can see which you picked: a small symbol stands in front of your name in the tab list. On a Pure island those commands refuse politely. Without an island they refuse too.
+      Islands that came over from the old BentoBox setup start out undecided and play Pure until the owner picks with {cmd:/island economy}. Letting money in is the one choice that cannot be taken back, so the default is the careful one.
+  - question: How do the phases work?
+    title: Phases
+    text: |
+      Each dimension's block counts how often <i>you</i> broke it. As the count climbs it passes through phases — Meadow, Quarry, Frost and so on — and each phase decides what the block turns into (by weight) and which mobs may appear on top of it.
+
+      {cmd:/island phases} opens the list for the dimension you stand in, or {cmd:/island phases nether} / {cmd:/island phases end} for another. It shows what each phase yields and how far you are. Entering a new phase shows a title, and a progress bar on your screen counts down to the next one.
+  - question: How do I get to the nether and end?
+    title: Nether and end
+    text: |
+      Your island has its own nether and its own end. They are locked at first. A phase of the overworld opens the nether, a later one the end — the moment your block reaches it, and you keep it for good.
+
+      {cmd:/island nether} and {cmd:/island end} take you there. If it is still locked you are told which phase opens it and how many blocks are left. Portals work too: a nether portal on your island leads to <i>your</i> nether, an end portal to <i>your</i> end — never to the server's own. Items and mobs stay on their island.
+      You cannot fight a dragon here; no end island gets one.
+  - question: What does the menu show?
+    title: The island menu
+    text: |
+      {run:/island menu} opens your island: the dimensions to jump to, your team, the phases, setting the spawn, the sidebar and the way out (give up or leave).
+  - question: How do I set where I arrive?
+    title: Spawn
+    text: |
+      Stand where you want to arrive, on your own island, and type {cmd:/island setspawn}. It is set per dimension, and your whole team arrives there. You can only set it while standing on your own island.
+  - question: What is the sidebar?
+    title: Sidebar
+    text: |
+      On the island server, a side panel shows your island, the dimension, your phase and progress, blocks broken and your team. {cmd:/island sidebar} hides or brings it back — it works from any server of the network, but the panel only lives on the island server.
+  - question: Can I see somebody else's island?
+    title: Info
+    text: |
+      {cmd:/island info} shows the island you stand on, or yours. {cmd:/island info <player>} shows somebody's: owner, which money, team, phase, blocks broken and the dimensions it has open.
+  - question: What happens when I die?
+    title: Death and logging out
+    text: |
+      If you have no bed or anchor, you respawn on the island you died on — as long as you may be there — otherwise on your own. Logging out remembers where on an island you stood, so you come back to the same spot even when the island's world went to sleep meanwhile.
+  - question: What if nobody is on my island?
+    title: Sleeping islands
+    text: |
+      An island's worlds are loaded only while somebody is on them. After <white>{setting:oneblock:unload-seconds|seconds}</white> empty they go to sleep, and wake up when somebody arrives. Nothing is deleted. Staff can keep an island awake or closed on purpose.
+      {if:oneblock:hosts-islands}This server keeps the islands itself.{/if}
+  - question: Can anything break the block?
+    title: Protecting the block
+    text: |
+      Only a player's own break counts and replaces it. Explosions, pistons, fire, decay, melting, falling and endermen all leave it alone. Whoever Core's protection lets break it, breaks it.
+  - question: Who can come to my island?
+    title: Visitors
+    text: |
+      Your team, always. Others only with a guest invite (see the team page), and staff anywhere. If staff have closed an island for a while, only they get on. Typed from another server, island commands send you over to the island server first.
