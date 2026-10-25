@@ -23,6 +23,7 @@ import de.raindancer.modules.oneblock.screen.ChooseModeMenu;
 import de.raindancer.modules.oneblock.service.AdminService;
 import de.raindancer.modules.oneblock.service.InviteService;
 import de.raindancer.modules.oneblock.service.IslandEndpoint;
+import de.raindancer.modules.oneblock.service.IslandScreens;
 import de.raindancer.modules.oneblock.service.IslandLifecycle;
 import de.raindancer.modules.oneblock.service.IslandServer;
 import de.raindancer.modules.oneblock.service.IslandService;
@@ -64,7 +65,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class OneBlockModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("oneblock", "OneBlock", "0.7.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("oneblock", "OneBlock", "0.8.0")
             .describedAs("OneBlock islands, each its own world with its own nether and end, unloaded while nobody "
                     + "plays — with /island and invites from anywhere on the network.")
             .by("Raindancer118");
@@ -170,6 +171,7 @@ public final class OneBlockModule implements FlexModule {
             context.listener(new ArrivalListener(services));
             context.listener(new SidebarListener(services));
         }
+        islandServer.ifPresent(islands -> screens(context, islands));
         islandServer.ifPresent(islands -> {
             context.listener(new OneBlockListener(islands.oneBlock()));
             context.listener(new PresenceListener(context.plugin(), islands));
@@ -177,6 +179,19 @@ public final class OneBlockModule implements FlexModule {
             context.listener(new MoneyGateListener(islands.book(), context.core().messages(), settings::current));
         });
         OneBlockCommands.ready(services);
+    }
+
+    /** Screens for /screen — Core 2.10.0; on an older Core there are simply none. Only the island server has the islands. */
+    private void screens(ModuleContext context, IslandServer islands) {
+        try {
+            var screens = context.core().screens();
+            if (screens != null) {
+                new IslandScreens(islands.book(), islands.content()::current).register(screens, context.plugin());
+                context.closeWith(() -> IslandScreens.KINDS.forEach(screens::unregister));
+            }
+        } catch (LinkageError olderCore) {
+            context.log().info("RainsCore is older than 2.10.0: no island screens until it is updated.");
+        }
     }
 
     /** The island server's own half: the book, the worlds, the block, the lifecycle — and Core's land questions. */
