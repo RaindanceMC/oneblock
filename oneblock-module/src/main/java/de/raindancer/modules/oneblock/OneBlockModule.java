@@ -65,7 +65,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class OneBlockModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("oneblock", "OneBlock", "0.8.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("oneblock", "OneBlock", "0.9.0")
             .describedAs("OneBlock islands, each its own world with its own nether and end, unloaded while nobody "
                     + "plays — with /island and invites from anywhere on the network.")
             .by("Raindancer118");
@@ -214,7 +214,7 @@ public final class OneBlockModule implements FlexModule {
         IslandWorlds worlds = new IslandWorlds(server, log);
         Travel travel = new Travel(context.plugin(), context.core().safety(), context.core().audit());
         IslandTravel islandTravel = new IslandTravel(server, worlds, travel, context.core().messages(),
-                System::currentTimeMillis, settings.current());
+                System::currentTimeMillis, task -> Scheduling.globalLater(context.plugin(), 2L, task), settings.current());
         settings.onChange(islandTravel::settings);
         IslandService service = new IslandService(book, content::current, System::currentTimeMillis);
         int opened = service.openDue();

@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.LongSupplier;
 
 /**
@@ -33,18 +34,21 @@ public final class IslandTravel implements IOneBlockService {
     private final Travel travel;
     private final Messages messages;
     private final LongSupplier clock;
+    private final Consumer<Runnable> later;
+    private final Preparing preparing = new Preparing();
     private final EntryRule entry = new EntryRule();
     /** Guests let in by an accepted invite: player and island, for as long as they are on this server. */
     private final Set<String> guests = ConcurrentHashMap.newKeySet();
     private volatile OneBlockSettings settings;
 
     public IslandTravel(Server server, IslandWorlds worlds, Travel travel, Messages messages, LongSupplier clock,
-                        OneBlockSettings settings) {
+                        Consumer<Runnable> later, OneBlockSettings settings) {
         this.server = server;
         this.worlds = worlds;
         this.travel = travel;
         this.messages = messages;
         this.clock = clock;
+        this.later = later;
         settings(settings);
     }
 
@@ -82,10 +86,37 @@ public final class IslandTravel implements IOneBlockService {
             messages.send(player, refused.get(), "dimension", messages.get(dimension.nameKey()));
             return false;
         }
+        if (worlds.loaded(island, dimension).isPresent()) {
+            depart(player, island, dimension);
+            return true;
+        }
+        // Making or loading a world stalls the server for a moment: say so first, and do it on the next tick, so the
+        // line is on its way before the stall. One trip per player; the world itself is made on this thread only.
+        if (!preparing.begin(player.getUniqueId())) {
+            messages.send(player, "oneblock.go.already");
+            return true;
+        }
+        messages.send(player, "oneblock.go.preparing", "dimension", messages.get(dimension.nameKey()));
+        later.accept(() -> {
+            preparing.done(player.getUniqueId());
+            if (!player.isOnline()) {
+                return;
+            }
+            Optional<String> still = refusal(player, island, dimension);
+            if (still.isPresent()) {
+                messages.send(player, still.get(), "dimension", messages.get(dimension.nameKey()));
+                return;
+            }
+            depart(player, island, dimension);
+        });
+        return true;
+    }
+
+    private void depart(Player player, Island island, IslandDimension dimension) {
         Optional<Location> arrival = arrival(island, dimension);
         if (arrival.isEmpty()) {
             messages.send(player, "oneblock.go.failed");
-            return false;
+            return;
         }
         travel.go(player, arrival.get(), Trip.to("island").exactly(), new TravelWatcher() {
             @Override
@@ -95,7 +126,6 @@ public final class IslandTravel implements IOneBlockService {
                         : "oneblock.go.failed");
             }
         });
-        return true;
     }
 
     /** Where somebody arrives: the team's spawn while there is ground under it, else on top of the block. */

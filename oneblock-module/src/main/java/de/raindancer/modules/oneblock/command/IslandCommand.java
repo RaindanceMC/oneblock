@@ -16,6 +16,7 @@ import de.raindancer.modules.oneblock.screen.ConfirmScreen;
 import de.raindancer.modules.oneblock.screen.IslandMenu;
 import de.raindancer.modules.oneblock.screen.TeamMenu;
 import de.raindancer.modules.oneblock.screen.PhasesMenu;
+import de.raindancer.modules.oneblock.rules.CommandRule;
 import de.raindancer.modules.oneblock.rules.PhaseRule;
 import de.raindancer.modules.oneblock.service.IslandServer;
 import de.raindancer.modules.oneblock.service.Replies;
@@ -43,19 +44,10 @@ import java.util.function.Supplier;
  */
 public final class IslandCommand implements IOneBlockCommand {
 
-    /** What answers on every server, without going anywhere. */
-    private static final List<String> ANYWHERE = List.of("invite", "guest", "accept", "deny", "sidebar");
-    /** What only the island server does. */
-    private static final List<String> ON_ISLANDS = List.of("menu", "create", "home", "nether", "end", "phases",
-            "team", "kick", "leave", "setspawn", "info", "economy");
+    private static final List<String> ANYWHERE = CommandRule.ANYWHERE;
+    private static final List<String> ON_ISLANDS = CommandRule.ON_ISLANDS;
     private static final PhaseRule PHASES = new PhaseRule();
-    private static final List<String> SUBCOMMANDS;
-
-    static {
-        List<String> all = new ArrayList<>(ON_ISLANDS);
-        all.addAll(ANYWHERE);
-        SUBCOMMANDS = List.copyOf(all);
-    }
+    private static final CommandRule COMMANDS = new CommandRule();
 
     private final Supplier<OneBlockServices> services;
 
@@ -82,6 +74,10 @@ public final class IslandCommand implements IOneBlockCommand {
         Requester me = new Requester(player.getUniqueId(), player.getName());
         String other = args.length > 1 ? args[1] : null;
         if (ANYWHERE.contains(sub)) {
+            if (other == null && COMMANDS.usageKey(sub).isPresent()) {
+                live.messages().send(player, COMMANDS.usageKey(sub).get());
+                return;
+            }
             CompletableFuture<Reply> asked = switch (sub) {
                 case "invite" -> live.gateway().invite(me, other, InviteKind.TEAM);
                 case "guest" -> live.gateway().invite(me, other, InviteKind.GUEST);
@@ -91,8 +87,8 @@ public final class IslandCommand implements IOneBlockCommand {
             asked.thenAccept(reply -> Scheduling.entity(live.plugin(), player, () -> said(live, player, reply)));
             return;
         }
-        if (!sub.isEmpty() && !ON_ISLANDS.contains(sub)) {
-            live.messages().send(player, "oneblock.usage");
+        if (!COMMANDS.knows(sub)) {
+            live.messages().send(player, "oneblock.unknown", "typed", args[0]);
             return;
         }
         Optional<IslandServer> islands = live.islandServer();
@@ -138,8 +134,13 @@ public final class IslandCommand implements IOneBlockCommand {
             case "nether" -> go(live, islands, player, own, IslandDimension.NETHER);
             case "end" -> go(live, islands, player, own, IslandDimension.END);
             case "phases" -> {
-                IslandDimension dimension = args.length > 1 ? IslandDimension.byId(args[1]).orElse(IslandDimension.OVERWORLD)
-                        : Island.dimensionOf(player.getWorld().getName()).orElse(IslandDimension.OVERWORLD);
+                Optional<IslandDimension> typed = args.length > 1 ? IslandDimension.byId(args[1]) : Optional.empty();
+                if (args.length > 1 && typed.isEmpty()) {
+                    live.messages().send(player, "oneblock.phases.unknown-dimension", "typed", args[1]);
+                    return;
+                }
+                IslandDimension dimension = typed.orElseGet(() ->
+                        Island.dimensionOf(player.getWorld().getName()).orElse(IslandDimension.OVERWORLD));
                 if (own.isEmpty()) {
                     live.messages().send(player, "oneblock.refuse.no-island");
                 } else {
@@ -235,7 +236,7 @@ public final class IslandCommand implements IOneBlockCommand {
             island = target == null ? Optional.empty() : islands.book().ofPlayer(target.getUniqueId());
         }
         if (island.isEmpty()) {
-            live.messages().send(player, "oneblock.info.none", "player", name == null ? player.getName() : name);
+            live.messages().send(player, name == null ? "oneblock.info.none-yet" : "oneblock.info.none", "player", name == null ? player.getName() : name);
             return;
         }
         Island shown = island.get();
@@ -281,21 +282,33 @@ public final class IslandCommand implements IOneBlockCommand {
             return List.of();
         }
         if (args.length <= 1) {
-            String started = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-            return SUBCOMMANDS.stream().filter(name -> name.startsWith(started)).toList();
+            return COMMANDS.subcommands(args.length == 0 ? "" : args[0]);
         }
-        String sub = args[0].toLowerCase(Locale.ROOT);
         String typed = args[1].toLowerCase(Locale.ROOT);
-        if (sub.equals("phases")) {
-            return Arrays.stream(IslandDimension.values()).map(IslandDimension::id)
-                    .filter(name -> name.startsWith(typed)).toList();
-        }
         OneBlockServices live = services.get();
-        List<String> names = new ArrayList<>(PlayerTargets.suggest(live.server(), source.getSender(), args[1],
-                online -> !online.equals(player)));
-        elsewhere(live).stream().filter(name -> name.toLowerCase(Locale.ROOT).startsWith(typed))
-                .filter(name -> !names.contains(name)).sorted().forEach(names::add);
-        return names;
+        return switch (args.length == 2 ? COMMANDS.argumentOf(args[0]) : CommandRule.Argument.NONE) {
+            case DIMENSION -> Arrays.stream(IslandDimension.values()).map(IslandDimension::id)
+                    .filter(name -> name.startsWith(typed)).toList();
+            case TEAM_MEMBER -> teamNames(live, player).stream()
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(typed)).toList();
+            case PLAYER -> {
+                List<String> names = new ArrayList<>(PlayerTargets.suggest(live.server(), source.getSender(), args[1],
+                        online -> !online.equals(player)));
+                elsewhere(live).stream().filter(name -> name.toLowerCase(Locale.ROOT).startsWith(typed))
+                        .filter(name -> !names.contains(name)).sorted().forEach(names::add);
+                yield names;
+            }
+            case NONE -> List.of();
+        };
+    }
+
+    /** The team without the player themselves: who a kick can mean. */
+    private static List<String> teamNames(OneBlockServices live, Player player) {
+        return live.islandServer().flatMap(islands -> islands.book().ofPlayer(player.getUniqueId()))
+                .map(island -> island.members().stream()
+                        .map(member -> live.server().getOfflinePlayer(member).getName())
+                        .filter(java.util.Objects::nonNull).sorted().toList())
+                .orElse(List.of());
     }
 
     /** Everybody online on another server — the network's presence, or the link's roster. */

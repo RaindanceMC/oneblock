@@ -5,6 +5,7 @@
 oneblock:
 
   usage: "<gray>/island  ·  menu  ·  nether  ·  end  ·  phases  ·  team  ·  invite <player>  ·  guest <player>  ·  accept  ·  deny  ·  kick <player>  ·  leave  ·  setspawn  ·  info  ·  sidebar"
+  unknown: "<red>There is no <white>/island <typed></white>. <gray>Try <white>/island menu</white> — or press tab after <white>/island </white> to see everything it can do."
   only-a-player: "<red>Consoles do not get islands. Not even a small one."
   not-allowed: "<red>You may not use islands. Somebody decided that, and it was not the block."
   going: "<gray>Off to the islands. Mind the gap — it is all void."
@@ -45,7 +46,7 @@ oneblock:
     has-team: "<red>Your team is still on the island. Take them off first (<white>/island team</white>) — an island needs an owner."
 
   kick:
-    usage: "<gray>/island kick <player>"
+    usage: "<gray>Usage: <white>/island kick <player></white> <dark_gray>(tab shows your team)"
     done: "<green><white><player></white> is off your island."
     not-member: "<red><white><player></white> is not on your team."
     owner-only: "<red>Only the owner takes somebody off the island."
@@ -63,6 +64,7 @@ oneblock:
     not-invited: "<red>That island is not yours. Ask its team for a <white>/island guest</white> invite."
     failed: "<red>Something stopped you getting there. Try again in a moment."
     already: "<gray>You are on the way already — one trip at a time."
+    preparing: "<gray>Getting <white><dimension></white> ready — one moment, you go as soon as it is."
 
   portal:
     locked: "<gray>The portal hums, but <white><dimension></white> is still locked on this island. <click:run_command:'/island phases'><yellow>[See what opens it]</yellow></click>"
@@ -91,7 +93,8 @@ oneblock:
 
   info:
     island: "<gray>━━ <white><player></white>'s island ━━<newline><gray>Money: <mode><newline><gray>Team: <white><team><newline><gray>Phase: <yellow><phase></yellow> <dark_gray>· <gray>broken: <white><blocks><newline><gray>Dimensions: <white><dimensions>"
-    none: "<gray><white><player></white> has no island."
+    none: "<gray><white><player></white> has no island — or has not been seen here. Names are spelled as they log in."
+    none-yet: "<gray>You are not on an island, and none is here. <click:run_command:'/island'><yellow>[Get one]</yellow></click>"
 
   refuse:
     self: "<red>Inviting yourself. Bold. Also pointless."
@@ -103,9 +106,10 @@ oneblock:
     nobody: "<red>Nobody called <white><player></white> is online anywhere on the network. Invites need somebody to read them."
     asleep: "<red>The island server is not answering right now. The block is patient — try again in a moment."
     several: "<yellow>Several invites are waiting. Say whose: <white>/island accept <player></white>."
-    no-invite: "<gray>No invite waiting for you. Popular, but not that popular."
+    no-invite: "<gray>No invite waiting for you. Popular, but not that popular. Invites run out after a few minutes — ask them to send it again."
 
   invite:
+    usage: "<gray>Usage: <white>/island invite <player></white> <dark_gray>— asks them onto your team, from any server."
     sent-team: "<green>Invited <white><player></white> to your team. They have <white><minutes></white> minute(s) to say yes."
     sent-guest: "<green>Invited <white><player></white> to visit your island. They have <white><minutes></white> minute(s)."
     received-team:
@@ -120,6 +124,12 @@ oneblock:
     declined: "<yellow><white><player></white> turned your invite down. The block still likes you."
     declined-by-you: "<gray>Declined. <white><player></white> has been told, gently."
     ran-out: "<gray>Your invite to <white><player></white> ran out. Nobody clicked anything."
+
+  guest:
+    usage: "<gray>Usage: <white>/island guest <player></white> <dark_gray>— lets them visit your island, from any server."
+
+  phases:
+    unknown-dimension: "<red>No dimension called <white><typed></white>. <gray>Try <white>/island phases overworld</white>, <white>nether</white> or <white>end</white>."
 
   accept:
     on-the-way: "<green>Off to <white><player></white>'s island. Hold on to something."
