@@ -45,7 +45,7 @@ public final class IslandScreens {
         String head = "<gold><bold>Your island</bold></gold>";
         Optional<Island> held = book.ofPlayer(viewer.id());
         if (held.isEmpty()) {
-            return MINI.deserialize(head + "\n<gray>None yet — <white>/island");
+            return MINI.deserialize(head + "\n<gray>None yet. <white>/island");
         }
         Island island = held.get();
         Content phasesOf = content.get();

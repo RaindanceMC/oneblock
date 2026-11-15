@@ -92,7 +92,7 @@ public final class ContentReader {
         }
         phases.stream().min(Comparator.comparingLong(Phase::from)).filter(first -> first.from() != 0)
                 .ifPresent(first -> problems.add(path + "." + first.id() + ": the first phase starts at 0, not at "
-                        + first.from() + " — read as 0"));
+                        + first.from() + " (read as 0)"));
         return phases;
     }
 

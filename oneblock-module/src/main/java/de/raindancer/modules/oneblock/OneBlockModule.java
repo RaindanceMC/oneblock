@@ -67,7 +67,7 @@ public final class OneBlockModule implements FlexModule {
 
     private static final ModuleInfo INFO = ModuleInfo.of("oneblock", "OneBlock", "0.9.0")
             .describedAs("OneBlock islands, each its own world with its own nether and end, unloaded while nobody "
-                    + "plays — with /island and invites from anywhere on the network.")
+                    + "plays. Use /island, with invites from anywhere on the network.")
             .by("Raindancer118");
 
     private static final long SWEEP_TICKS = 100L;
@@ -148,7 +148,7 @@ public final class OneBlockModule implements FlexModule {
             log.info("This is the island server: answering invites over {}.",
                     calls.isPresent() ? "the network" : links.size() + " link(s)");
             if (links.isEmpty() && calls.isEmpty()) {
-                log.warn("No links in RainsCore's link.yml — invites work only between players on this server.");
+                log.warn("No links in RainsCore's link.yml. Invites work only between players on this server.");
             }
         } else if (calls.isPresent()) {
             // The island server's network id is the proxy's name for it, the one setting both agree on.
@@ -156,7 +156,7 @@ public final class OneBlockModule implements FlexModule {
         } else {
             gateway = new RemoteGateway(() -> context.core().links().named(settings.current().islandServer()));
             if (context.core().links().named(settings.current().islandServer()).isEmpty()) {
-                log.warn("No link called '{}' in RainsCore's link.yml — /island still sends people to '{}', but "
+                log.warn("No link called '{}' in RainsCore's link.yml. /island still sends people to '{}', but "
                         + "invites from here are refused until there is one.", settings.current().islandServer(),
                         settings.current().proxyServer());
             }
@@ -201,8 +201,8 @@ public final class OneBlockModule implements FlexModule {
         SqlIslandStorage storage = new SqlIslandStorage(database);
         book = new IslandBook(storage);
         if (!offTheServerThread(book::load)) {
-            log.error("The islands could not be read from {}. Nobody can play until they can — fix the database "
-                    + "and restart; nothing was written over.", database.describe());
+            log.error("The islands could not be read from {}. Nobody can play until they can be. Fix the database "
+                    + "and restart. Nothing was written over.", database.describe());
         } else {
             log.info("{} island(s) loaded.", book.size());
         }

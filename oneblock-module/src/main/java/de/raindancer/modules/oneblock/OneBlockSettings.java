@@ -30,7 +30,7 @@ public record OneBlockSettings(
         String islandServer,
 
         @In("oneblock") @Title("Island server on the proxy")
-        @Describe("The proxy's name for the island server — where /island and an accepted invite send people. "
+        @Describe("The proxy's name for the island server, where /island and an accepted invite send people. "
                 + "On a network it must be the island server's id in network.yml: the server with that id is the "
                 + "island server, without anything else to set.")
         @Key("proxy-server")
@@ -42,7 +42,7 @@ public record OneBlockSettings(
         int inviteMinutes,
 
         @In("oneblock/islands") @Title("This is the island server")
-        @Describe("Keeps the islands on this server. Only needed off a network — on one, the server whose id is "
+        @Describe("Keeps the islands on this server. Only needed off a network. On a network, the server whose id is "
                 + "'Island server on the proxy' is the island server by itself.")
         @Key("hosts-islands")
         boolean hostsIslands,

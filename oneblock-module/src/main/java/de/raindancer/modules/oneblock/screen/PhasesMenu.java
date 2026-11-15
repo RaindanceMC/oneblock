@@ -83,7 +83,7 @@ public final class PhasesMenu extends PaginatedMenu<Phase> implements IOneBlockS
             lore.add("<yellow>You are here  " + ProgressBar.mini(standing.percent(), BAR));
             standing.next().ifPresentOrElse(
                     next -> lore.add("<gray>" + String.format("%,d", standing.toNext()) + " more to <white>" + next.name()),
-                    () -> lore.add("<gray>The last phase. It only gets better."));
+                    () -> lore.add("<gray>The last phase."));
         } else if (reached) {
             lore.add("<green>✔ Reached");
         } else {
