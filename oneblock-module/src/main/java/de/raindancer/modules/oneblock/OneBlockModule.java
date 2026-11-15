@@ -100,7 +100,6 @@ public final class OneBlockModule implements FlexModule {
         SettingsStore<OneBlockSettings> settings = context.settings(OneBlockSettings.class, OneBlockSettings.DEFAULTS);
         context.core().messages().defineFrom(OneBlockModule.class.getResourceAsStream("messages.yml"),
                 context.chat().brand()::chatPrefix);
-        context.core().messages().seriousFrom(OneBlockModule.class.getResourceAsStream("messages-serious.yml"));
         int registered = PermissionNodes.register(server);
         if (registered > 0) {
             log.info("{} permission(s) registered.", registered);
