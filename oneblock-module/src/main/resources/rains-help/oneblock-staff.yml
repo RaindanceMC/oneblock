@@ -2,7 +2,7 @@ id: oneblock-staff
 title: OneBlock administration
 summary: Hold islands up or down, auto-unload, block counts, phases, reloading content, BentoBox migration.
 intro: |
-  Islands sleep when nobody is home. You can overrule that, and a few other things.
+  Islands unload when nobody is on them. You can overrule that, and a few other things.
 icon: COMMAND_BLOCK
 category: Staff
 order: 31
@@ -24,7 +24,7 @@ sections:
   - question: What is auto-unload?
     title: Auto-unload
     text: |
-      By default an empty island unloads after <white>{setting:oneblock:unload-seconds|seconds}</white>. {cmd:/islandadmin autounload <island> on|off} switches that for one island; off keeps it loaded — also after a restart.
+      By default an empty island unloads after <white>{setting:oneblock:unload-seconds|seconds}</white>. {cmd:/islandadmin autounload <island> on|off} switches that for one island; off keeps it loaded, also after a restart.
   - question: How do I go there or change progress?
     title: Teleport, blocks, phase
     text: |

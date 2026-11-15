@@ -2,7 +2,7 @@ id: oneblock-team
 title: OneBlock team & invites
 summary: Bring friends onto your island, invite guests, answer invites from any server, leave or kick.
 intro: |
-  A block shared is a block halved, but it breaks twice as fast. Here is how a team forms.
+  Bring friends onto your island and share its block. Here is how a team forms.
 icon: PLAYER_HEAD
 category: Games
 order: 31
@@ -14,7 +14,7 @@ sections:
   - question: How do I invite someone to my team?
     title: Team invite
     text: |
-      {cmd:/island invite <player>} invites somebody to join. They can be on <i>any</i> server of the network — they get a message with [Join] and [No thanks] buttons. It stays open for <white>{setting:oneblock:invite-minutes|minutes}</white>, then runs out and you are told.
+      {cmd:/island invite <player>} invites somebody to join. They can be on <i>any</i> server of the network. They get a message with [Join] and [No thanks] buttons. It stays open for <white>{setting:oneblock:invite-minutes|minutes}</white>, then runs out and you are told.
 
       Normally only the owner invites to the team (the island can allow more); everybody on the team can bring guests. The invitee's message tells them which money your island plays with before they say yes.
   - question: How do I let someone visit?
@@ -28,7 +28,7 @@ sections:
   - question: Why was my invite refused?
     title: Refusals
     text: |
-      Inviting yourself, no island of your own, the invitee already on your island or banned by you, only the owner may invite to the team, your team is full, nobody with that name online anywhere on the network, or the island server not answering right now. The message names the reason.
+      Inviting yourself, no island of your own, the invitee already on your island or banned by you, only the owner may invite to the team, your team is full, nobody with that name online anywhere on the network, or the island server not reachable. The message names the reason.
   - question: Can I join while I own an island?
     title: Joining another island
     text: |
@@ -40,4 +40,4 @@ sections:
   - question: How do I leave?
     title: Leaving
     text: |
-      {cmd:/island leave} (with a confirmation). A member leaves the team. An owner alone gives the island up — it is <b>kept</b>, not deleted, but nobody plays it any more. An owner with a team cannot leave: kick them first, an island needs an owner.
+      {cmd:/island leave} (with a confirmation). A member leaves the team. An owner alone gives the island up. It is <b>kept</b>, not deleted, but nobody plays it any more. An owner with a team cannot leave: kick them first, because an island needs an owner.

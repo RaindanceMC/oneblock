@@ -1,14 +1,14 @@
-# Rain's OneBlock — every line this module says.
+# Rain's OneBlock: every line this module says.
 #
 # Offered as a *floor*: anything an owner has already written in their own messages.yml wins. See
 # Messages.defineFrom.
 oneblock:
 
   usage: "<gray>/island  ·  menu  ·  nether  ·  end  ·  phases  ·  team  ·  invite <player>  ·  guest <player>  ·  accept  ·  deny  ·  kick <player>  ·  leave  ·  setspawn  ·  info  ·  sidebar"
-  unknown: "<red>There is no <white>/island <typed></white>. <gray>Try <white>/island menu</white> — or press tab after <white>/island </white> to see everything it can do."
-  only-a-player: "<red>Consoles do not get islands. Not even a small one."
-  not-allowed: "<red>You may not use islands. Somebody decided that, and it was not the block."
-  going: "<gray>Off to the islands. Mind the gap — it is all void."
+  unknown: "<red>There is no <white>/island <typed></white>. <gray>Try <white>/island menu</white> or press tab after <white>/island </white> to see everything it can do."
+  only-a-player: "<red>Only a player can use islands."
+  not-allowed: "<red>You may not use islands."
+  going: "<gray>Sending you to your island."
 
   mode:
     pure:
@@ -20,8 +20,8 @@ oneblock:
     undecided:
       badge: "<gray>? not chosen yet</gray>"
       name: "<gray>no money chosen yet</gray>"
-    chosen: "<green>Your island plays with <mode><green> — for good. Everybody can see it."
-    already: "<red>Your island has chosen its money already. That one is for keeps."
+    chosen: "<green>Your island plays with <mode><green> for good. Everybody can see it."
+    already: "<red>Your island has already chosen its money. It cannot be changed."
     owner-only: "<red>Only the island's owner chooses its money."
 
   dimension:
@@ -31,26 +31,26 @@ oneblock:
 
   create:
     choose: "<red>Pick how your island plays first: pure, or with the SMP economy."
-    already: "<red>You already have an island. One block per person — it is in the name."
-    done: "<green>Your island is ready, playing with <mode><green>. Break the block. Then break it again."
+    already: "<red>You already have an island."
+    done: "<green>Your island is ready, playing with <mode><green>. Break the block to begin."
 
   join:
-    done: "<green>You are on <white><player></white>'s team now. Their block is your block."
-    own-island: "<red>You have an island of your own. Give it up first (<white>/island leave</white>) — then join theirs."
+    done: "<green>You are on <white><player></white>'s team now and share their block."
+    own-island: "<red>You have an island of your own. Give it up first (<white>/island leave</white>), then join theirs."
     other-island: "<red>You are on another island's team. Leave it first with <white>/island leave</white>."
     full: "<red>That team is full (<white><most></white>). Somebody has to leave first."
 
   leave:
-    done: "<gray>You left <white><player></white>'s island. The block will manage."
-    abandoned: "<gray>You gave your island up. It is kept, not deleted — but nobody plays it any more."
-    has-team: "<red>Your team is still on the island. Take them off first (<white>/island team</white>) — an island needs an owner."
+    done: "<gray>You left <white><player></white>'s island."
+    abandoned: "<gray>You gave your island up. It is kept, not deleted, but nobody plays it any more."
+    has-team: "<red>Your team is still on the island. Take them off first (<white>/island team</white>), because an island needs an owner."
 
   kick:
     usage: "<gray>Usage: <white>/island kick <player></white> <dark_gray>(tab shows your team)"
     done: "<green><white><player></white> is off your island."
     not-member: "<red><white><player></white> is not on your team."
     owner-only: "<red>Only the owner takes somebody off the island."
-    self: "<red>You cannot kick yourself off your own island. Try /island leave."
+    self: "<red>You cannot kick yourself off your own island. Use /island leave."
     you: "<yellow><white><player></white> took you off their island."
 
   spawn:
@@ -59,24 +59,24 @@ oneblock:
 
   go:
     locked: "<red><white><dimension></white> is still locked on that island."
-    locked-phase: "<red>Not yet: <white><dimension></white> opens when <white><in></white> reaches <yellow><phase></yellow> — <white><blocks></white> blocks to go. <click:run_command:'/island phases'><yellow>[See the phases]</yellow></click>"
-    held-down: "<red>That island is closed for now — staff are looking after it. Try again later."
+    locked-phase: "<red>Not yet: <white><dimension></white> opens when <white><in></white> reaches <yellow><phase></yellow> (<white><blocks></white> blocks to go). <click:run_command:'/island phases'><yellow>[See the phases]</yellow></click>"
+    held-down: "<red>That island is closed for now. Staff are looking after it. Try again later."
     not-invited: "<red>That island is not yours. Ask its team for a <white>/island guest</white> invite."
     failed: "<red>Something stopped you getting there. Try again in a moment."
-    already: "<gray>You are on the way already — one trip at a time."
-    preparing: "<gray>Getting <white><dimension></white> ready — one moment, you go as soon as it is."
+    already: "<gray>You are already on the way."
+    preparing: "<gray>Getting <white><dimension></white> ready. You go as soon as it is."
 
   portal:
-    locked: "<gray>The portal hums, but <white><dimension></white> is still locked on this island. <click:run_command:'/island phases'><yellow>[See what opens it]</yellow></click>"
+    locked: "<gray><white><dimension></white> is still locked on this island. <click:run_command:'/island phases'><yellow>[See what opens it]</yellow></click>"
 
   money:
-    no-island: "<red>No money here without an island. <click:run_command:'/island'><yellow>[Start one]</yellow></click> — and choose whether it plays with the SMP economy."
-    pure: "<red>Your island plays <aqua>Pure</aqua><red>: no SMP money here. That was the deal."
+    no-island: "<red>You need an island to use money here. <click:run_command:'/island'><yellow>[Start one]</yellow></click> Then choose whether it plays with the SMP economy."
+    pure: "<red>Your island plays <aqua>Pure</aqua><red>: no SMP money here."
     undecided: "<yellow>Your island has not chosen its money yet. <click:run_command:'/island economy'><yellow>[Choose now]</yellow></click> <gray>Until then it plays Pure."
 
   lifecycle:
-    taken-down: "<yellow>Staff closed this island for now. Off you go to safety."
-    unloaded: "<gray>This island is going to sleep."
+    taken-down: "<yellow>Staff closed this island for now. You were moved to safety."
+    unloaded: "<gray>This island is being unloaded."
 
   # In front of a name in the tablist, on every server: which money that player's island plays with.
   tab:
@@ -88,28 +88,28 @@ oneblock:
     bar-last: "<yellow><phase></yellow> <bar> <gray>the last phase"
     title: "<yellow><phase></yellow>"
     subtitle: "<gray>Phase <white><number></white> of <white><of></white>"
-    entered: "<green>The block broke through into <yellow><phase></yellow> <dark_gray>(<number>/<of>, <dimension>)</dark_gray><green>. New things are coming out of it."
-    opened: "<light_purple>Something shifted below the block: <white><dimension></white> is open. <click:run_command:'/island <id>'><yellow>[Go there]</yellow></click>"
+    entered: "<green>Your block reached <yellow><phase></yellow> <dark_gray>(<number>/<of>, <dimension>)</dark_gray><green>."
+    opened: "<light_purple><white><dimension></white> is now open on your island. <click:run_command:'/island <id>'><yellow>[Go there]</yellow></click>"
 
   info:
     island: "<gray>━━ <white><player></white>'s island ━━<newline><gray>Money: <mode><newline><gray>Team: <white><team><newline><gray>Phase: <yellow><phase></yellow> <dark_gray>· <gray>broken: <white><blocks><newline><gray>Dimensions: <white><dimensions>"
-    none: "<gray><white><player></white> has no island — or has not been seen here. Names are spelled as they log in."
+    none: "<gray><white><player></white> has no island, or has not been seen here. Names must be spelled as they log in."
     none-yet: "<gray>You are not on an island, and none is here. <click:run_command:'/island'><yellow>[Get one]</yellow></click>"
 
   refuse:
-    self: "<red>Inviting yourself. Bold. Also pointless."
-    no-island: "<red>You have no island yet. <click:run_command:'/island'><yellow>[Get one]</yellow></click> first."
-    already-member: "<red><white><player></white> is already on your island. They might notice an invite to where they are standing."
-    banned: "<red>You banned <white><player></white> from your island. Make up your mind — unban them first."
-    rank: "<red>Only the island's owner invites to the team. Bring <white><player></white> as a guest instead: <white>/island guest <player></white>."
-    full: "<red>Your team is full (<white><most></white>). Somebody has to leave before <white><player></white> can join."
-    nobody: "<red>Nobody called <white><player></white> is online anywhere on the network. Invites need somebody to read them."
-    asleep: "<red>The island server is not answering right now. The block is patient — try again in a moment."
+    self: "<red>You cannot invite yourself."
+    no-island: "<red>You have no island yet. <click:run_command:'/island'><yellow>[Create one]</yellow></click>"
+    already-member: "<red><white><player></white> is already on your island."
+    banned: "<red><white><player></white> is banned from your island. Unban them first."
+    rank: "<red>Only the island's owner invites to the team. Invite <white><player></white> as a guest instead: <white>/island guest <player></white>."
+    full: "<red>Your team is full (<white><most></white>). <white><player></white> cannot join."
+    nobody: "<red><white><player></white> is not online on the network."
+    asleep: "<red>The island server is not reachable. Try again shortly."
     several: "<yellow>Several invites are waiting. Say whose: <white>/island accept <player></white>."
-    no-invite: "<gray>No invite waiting for you. Popular, but not that popular. Invites run out after a few minutes — ask them to send it again."
+    no-invite: "<gray>You have no pending invites. Invites run out after a few minutes, so ask them to send it again."
 
   invite:
-    usage: "<gray>Usage: <white>/island invite <player></white> <dark_gray>— asks them onto your team, from any server."
+    usage: "<gray>Usage: <white>/island invite <player></white><dark_gray>: asks them onto your team, from any server."
     sent-team: "<green>Invited <white><player></white> to your team. They have <white><minutes></white> minute(s) to say yes."
     sent-guest: "<green>Invited <white><player></white> to visit your island. They have <white><minutes></white> minute(s)."
     received-team:
@@ -121,21 +121,21 @@ oneblock:
       smp: "<white><player></white> invites you to look round their <gold>◆ SMP economy</gold> OneBlock island. <click:run_command:'/island accept <player>'><green>[Visit]</green></click> <click:run_command:'/island deny <player>'><red>[No thanks]</red></click> <gray>Open for <minutes> minute(s)."
       undecided: "<white><player></white> invites you to look round their OneBlock island. <click:run_command:'/island accept <player>'><green>[Visit]</green></click> <click:run_command:'/island deny <player>'><red>[No thanks]</red></click> <gray>Open for <minutes> minute(s)."
     accepted: "<green><white><player></white> said yes and is on the way."
-    declined: "<yellow><white><player></white> turned your invite down. The block still likes you."
-    declined-by-you: "<gray>Declined. <white><player></white> has been told, gently."
-    ran-out: "<gray>Your invite to <white><player></white> ran out. Nobody clicked anything."
+    declined: "<yellow><white><player></white> declined your invite."
+    declined-by-you: "<gray>Declined. <white><player></white> has been told."
+    ran-out: "<gray>Your invite to <white><player></white> expired."
 
   guest:
-    usage: "<gray>Usage: <white>/island guest <player></white> <dark_gray>— lets them visit your island, from any server."
+    usage: "<gray>Usage: <white>/island guest <player></white><dark_gray>: lets them visit your island, from any server."
 
   phases:
     unknown-dimension: "<red>No dimension called <white><typed></white>. <gray>Try <white>/island phases overworld</white>, <white>nether</white> or <white>end</white>."
 
   accept:
-    on-the-way: "<green>Off to <white><player></white>'s island. Hold on to something."
+    on-the-way: "<green>Off to <white><player></white>'s island."
 
   visit:
-    taking-you: "<green>Taking you to <white><player></white>'s island. Wipe your feet."
+    taking-you: "<green>Taking you to <white><player></white>'s island."
 
   sidebar:
     title: "<green><bold>OneBlock</bold></green>"
@@ -152,7 +152,7 @@ oneblock:
     phase: " <yellow><phase> <dark_gray><number>/<of>"
     progress: " <bar> <white><percent>%"
     next: " <dark_gray>Next: <white><phase> <dark_gray>in <white><blocks>"
-    last-phase: " <dark_gray>The last phase. It only gets better."
+    last-phase: " <dark_gray>The last phase."
     blocks: " <white><blocks> <dark_gray>blocks broken"
     team: " <gray>Team <white><members>/<most> <dark_gray>· <green><online> online"
     team-unlimited: " <gray>Team <white><members> <dark_gray>· <green><online> online"
@@ -164,13 +164,13 @@ oneblock:
       coop: "Coop"
       visitor: "Visitor"
       banned: "Banned"
-    shown: "<green>Sidebar on. Numbers go up, morale goes up."
+    shown: "<green>Sidebar on."
     elsewhere: "<gray>The OneBlock sidebar lives on the island server. <click:run_command:'/island'><yellow>[Go there]</yellow></click>"
     hidden: "<gray>Sidebar off. <click:run_command:'/island sidebar'><yellow>[Bring it back]</yellow></click>"
 
   admin:
     usage: "<gray>/islandadmin list · info <island> · up|down <island> [1h|1d|forever] · release <island> · autounload <island> on|off · tp <island> [dimension] · blocks <island> <+n|-n> [dimension] · phase <island> <phase> [dimension] · reload · migrate [confirm]"
-    not-here: "<red>The islands live on the island server — run this there."
+    not-here: "<red>The islands live on the island server. Run this there."
     no-such-island: "<red>No island by that name or id. A member's name works, or the start of its id from /islandadmin list."
     bad-time: "<red>'<white><time></white>' is no length of time. Try 30m, 2h, 1d or forever."
     held-up: "<green><white><player></white>'s island stays up <white><time></white>, whoever plays."
@@ -180,13 +180,13 @@ oneblock:
     released: "<green><white><player></white>'s island is back to normal: up while played, asleep after."
     not-held: "<gray>Nothing holds <white><player></white>'s island."
     auto-unload-on: "<green><white><player></white>'s island goes to sleep again once nobody is on it."
-    auto-unload-off: "<yellow><white><player></white>'s island stays loaded now — also after a restart."
-    blocks: "<green><white><player></white>'s block in <white><dimension></white> is at <white><blocks></white> now — phase <yellow><phase></yellow>."
+    auto-unload-off: "<yellow><white><player></white>'s island stays loaded now, also after a restart."
+    blocks: "<green><white><player></white>'s block in <white><dimension></white> is at <white><blocks></white> now, phase <yellow><phase></yellow>."
     locked: "<red>That island has not opened <white><dimension></white>; there is no block there to move."
-    phase: "<green><white><player></white>'s block in <white><dimension></white> is in phase <yellow><phase></yellow> now — <white><blocks></white> blocks broken."
+    phase: "<green><white><player></white>'s block in <white><dimension></white> is in phase <yellow><phase></yellow> now, <white><blocks></white> blocks broken."
     no-such-phase: "<red>No phase <white><typed></white> in <white><dimension></white>. <gray>Phases: <phases>"
     info: "<gray><white><player></white>'s island <dark_gray><id></dark_gray> · loaded: <white><loaded></white> · auto-unload: <white><auto></white> · held: <white><hold></white>"
-    reloaded: "<green>content.yml reloaded — no problems."
+    reloaded: "<green>content.yml reloaded, no problems."
     reloaded-with-problems: "<yellow>content.yml reloaded with <white><problems></white> problem(s); each was left out:"
 
   migrate:
@@ -195,10 +195,10 @@ oneblock:
     world-loaded: "<red><white><world></white> is loaded. Restart without BentoBox so nothing holds it open."
     busy: "<yellow>A migration is running already."
     failed: "<red>Reading BentoBox's islands failed: <white><why>"
-    island: "<gray>· <white><player></white> <dark_gray>— team <white><team></white>, <white><blocks></white> blocks → phase <yellow><phase></yellow>, <white><dimensions></white>, block at <white><spot></white>, <white><regions></white> region file(s)"
+    island: "<gray>· <white><player></white><dark_gray>: team <white><team></white>, <white><blocks></white> blocks → phase <yellow><phase></yellow>, <white><dimensions></white>, block at <white><spot></white>, <white><regions></white> region file(s)"
     skipped: "<dark_gray>  skipped: <gray><why>"
     nothing: "<gray>Nothing left to move over."
-    dry-run: "<yellow><white><count></white> island(s) would move over as above. Nothing changed yet — <white>/islandadmin migrate confirm</white> does it."
+    dry-run: "<yellow><white><count></white> island(s) would move over as above. Nothing changed yet. <white>/islandadmin migrate confirm</white> does it."
     copying: "<gray>Copying <white><count></white> island(s)…"
     copy-failed: "<red>Could not move <white><player></white>'s island: <white><why>"
     done: "<green>Moved <white><count></white> island(s) over; <white><positions></white> player(s) come back where they left. Their owners choose the money on their next visit."

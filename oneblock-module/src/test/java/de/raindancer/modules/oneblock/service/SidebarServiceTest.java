@@ -84,7 +84,7 @@ class SidebarServiceTest {
         IslandView view = new IslandView(true, true, "Ada", 1000, 1, 6, 1, EconomyMode.PURE,
                 Optional.of(IslandDimension.OVERWORLD), new Progress("Plenty", 11, 11, 20_000, 100, "", 0));
         assertThat(plain(sidebar.draw(Optional.of(view), room -> List.of())))
-                .contains("Plenty 11/11", "The last phase. It only gets better.").noneMatch(line -> line.startsWith("Next"));
+                .contains("Plenty 11/11", "The last phase.").noneMatch(line -> line.startsWith("Next"));
     }
 
     @Test

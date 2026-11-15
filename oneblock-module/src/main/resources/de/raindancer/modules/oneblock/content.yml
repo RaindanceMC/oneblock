@@ -1,4 +1,4 @@
-# Rain's OneBlock — what the islands are made of.
+# Rain's OneBlock: what the islands are made of.
 #
 # Written to plugins/RainsOneBlock/content.yml the first time the island server starts; edit that copy and run
 # /islandadmin reload. Names are Minecraft's own ids (coal_ore, cow), without "minecraft:".
@@ -6,7 +6,7 @@
 # Each dimension's block goes through its phases by its own count: a phase holds from its "from" block until the
 # next one starts, and the last holds for good. A break turns the block into one of the phase's blocks, by weight.
 # A phase's mobs each have a chance in percent per break; they share one roll, and a hit spawns the mob on top.
-# "opens" names a dimension the island gets the moment it reaches the phase — and keeps.
+# "opens" names a dimension the island gets the moment it reaches the phase, and keeps it.
 #
 # Blocks must be solid and must not fall: sand, gravel and the like would drop into the void.
 
