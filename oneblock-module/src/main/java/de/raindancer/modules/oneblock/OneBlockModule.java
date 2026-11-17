@@ -65,7 +65,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class OneBlockModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("oneblock", "OneBlock", "0.9.1")
+    private static final ModuleInfo INFO = ModuleInfo.of("oneblock", "OneBlock", "0.10.0")
             .describedAs("OneBlock islands, each its own world with its own nether and end, unloaded while nobody "
                     + "plays. Use /island, with invites from anywhere on the network.")
             .by("Raindancer118");
@@ -144,6 +144,15 @@ public final class OneBlockModule implements FlexModule {
             sidebar = Optional.of(board);
             timer(context, SIDEBAR_TICKS, () -> board.refresh(server.getOnlinePlayers(), islands.host()));
             context.closeWith(() -> server.getOnlinePlayers().forEach(online -> board.forget(online.getUniqueId())));
+            // The sidebar switch is on /preferences (Core 2.103.0); /island sidebar stays as the shortcut.
+            try {
+                de.raindancer.core.ui.preference.Preference preference =
+                        OneBlockPreferences.sidebar(board, context.core().messages());
+                de.raindancer.core.ui.preference.Preferences.offer(context.plugin(), preference);
+                context.closeWith(() -> de.raindancer.core.ui.preference.Preferences.withdraw(preference));
+            } catch (LinkageError olderCore) {
+                log.info("RainsCore is older than 2.103.0: the island sidebar is not on /preferences.");
+            }
             log.info("This is the island server: answering invites over {}.",
                     calls.isPresent() ? "the network" : links.size() + " link(s)");
             if (links.isEmpty() && calls.isEmpty()) {
